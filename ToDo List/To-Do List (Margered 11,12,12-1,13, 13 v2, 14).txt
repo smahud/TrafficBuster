@@ -1,0 +1,901 @@
+>>> ToDo List 11
+
+📋 To-Do List 11 (Finalisasi, Patch & Notice — Format To-Do 10)
+FASE 4.0: Finalisasi Komunikasi Dua Arah, Keep Alive, dan Notice Peningkatan
+Tugas 51: Finalisasi Protokol Komunikasi & Mapping Variable JSON
+
+Mendokumentasikan mapping variable, tipe request/response dan event antar semua tab & endpoint REST/WebSocket.
+
+Pastikan field/structure konsisten, mudah diparse dan dicek validasi, siap multi-user.
+
+Tugas 52: Implementasi Keep-Alive & Timeout Sesi User
+
+Ping WebSocket setiap <=60 detik dari frontend ke backend.
+
+Backend mencatat waktu last-message per userId, session timeout jika >=5 menit.
+
+Kirim event sessionExpired ke frontend; UI alert dan auto logout.
+
+Tugas 53: Tambahan Field SessionActive di Response/WS
+
+Semua response REST & WS WAJIB memiliki field sessionActive: true/false untuk deteksi status session.
+
+Tugas 54: Penanganan UX Session Timeout di Frontend
+
+Tampilkan alert/log, block semua fitur, redirect ke login, update tab/stat.
+
+Tugas 55: Logging Timeout Session di Backend
+
+Catat event timeout ke file log per userId, info waktu & cause.
+
+Tugas 56: QA Test & Regression Multi-User Session
+
+Simulasi dua user running, pastikan session, config, progress isolate & tidak conflict. Skenario test wajib.
+
+Tugas 57: Integrasi Patch Session/KeepAlive ke Semua Tab
+
+Pastikan patch event/timeout/keepalive tereksekusi di general, run, scheduler, profile, settings.
+
+FASE 4.1: Patch NOTICES Roadmap & Edge Case — (dari Notice To-Do 10, Spesifikasi V1-V4)
+Tugas 58: Migrasi Simulasi ke Worker Pool Playwright Backend (NOTICE)
+
+Merancang dan implementasi migrasi dari setInterval ke worker pool Playwright asli per tab, per userId.
+
+Tugas 59: Migrasi Database ke File JSON, Atomic & Backup (NOTICE)
+
+Semua tab, config, proxy, job, audit log harus CRUD ke file JSON, safe-write atomic, backup sebelum overwrite.
+
+Tugas 60: Multi-Tenancy & Isolasi Penuh File/Session per User (NOTICE)
+
+Pastikan tidak ada state/config/proxy/job sharing antar userId di memory/file (multi-user robustness).
+
+Tugas 61: Robustness Proxy & File Save, Audit Log & Privacy (NOTICE/Edge Case)
+
+Implement failover proxy policy (hot-swap, backoff), atomic-save file JSON, audit log masking PII.
+
+Tugas 62: Engine Import Modular di Frontend/Backend (NOTICE)
+
+Develop file handler modular (.txt, .csv, .docx, .xlsx), validasi dan mapping format otomatis.
+
+Tugas 63: QA & Acceptance Testing/Benchmark, Dokumentasi Kontrak DTO
+
+Develop testkit, benchmarking, semua scenario (import, job, proxy, multi-user), export dan audit log, acceptance checklist dan dokumen JSON-schema DTO agar AI coder bisa auto gen code.
+
+FASE 4.2: Security Patch & Consent (dari Notice & Edge Case)
+Tugas 64: Security Audit—SafeMode, Consent, Log, Encryption
+
+Implementasi patch: SafeMode ON default (block external click), consent & log audit; proxy credential encrypted; log export masking.
+
+Tugas 65: Implement Consent per Project jika click external
+
+Consent record harus signed timestamp, ada UI & backend verification, log, dan storage DTO.
+
+Tugas 66: Rate Limiting, Throttling, Autoscale di Engine
+
+Patch config: pastikan engine auto reduced concurrency jika memory/CPU limit, rate limit API key/payload.
+
+Format dan urutan sama dengan To-Do List 10, lengkap dengan carry over semua notice dan edge case roadmap. Jika ingin breakdown detail step berikutnya, arahkan task tertentu dari daftar ini untuk mulai patch kode!
+
+ulangi, akses semua file. cek apakah todolist 11 anda sudah benar?
+
+Berikut revisi To-Do List 11 setelah akses dan cek langsung ke semua file source code, roadmap, serta notice yang belum tereksekusi:
+
+📋 To-Do List 11 (Format & Detail Sama Dengan To-Do List 10)
+FASE 4.0: Finalisasi Komunikasi Dua Arah & Sesi User
+Tugas 51: Finalisasi Mapping Variable & JSON Protokol
+
+Dokumentasi, audit, dan penyeragaman struktur request/response REST & WebSocket, antartab, dan backend. Pastikan semua field relevan tercakup dan validasi di setiap endpoint.
+
+Tugas 52: Implementasi Keep-Alive & Timeout Sesi User (max 5 menit)
+
+Kirim ping keepalive rutin dari frontend. Backend tracking timestamp pesan terakhir per userId dan timeout session + disconnect otomatis jika idle ≥5 menit.
+
+Frontend dan backend wajib handle session timeout dengan event & block task.
+
+Tugas 53: Field sessionActive di Response & WS-Payload
+
+Semua response REST & WebSocket WAJIB beri sessionActive status.
+
+Tugas 54: Penanganan UX Session Timeout di Frontend
+
+Alert dan disable UI sesudah timeout, redirect ke login, blok aksi.
+
+Tugas 55: Logging Event Session Timeout di Backend
+
+Event session timeout disimpan ke log JSON per userId dengan waktu dan cause.
+
+Tugas 56: QA Regression Test Multi-User Session
+
+Simulasi 2+ user aktif, isolate session/config/progress dari tab lain, test script wajib update.
+
+Tugas 57: Integrasi Patch Session/KeepAlive di Semua Tab
+
+Pastikan event/session/timeout diterima di profile, scheduler, run, dan tab settings.
+
+FASE 4.1: Patch NOTICES (Roadmap & Edge Cases – yang belum tereksekusi)
+Tugas 58: Engine Worker Pool Playwright Backend (NOTICE)
+
+Merancang migrasi backend dari simulasi interval ke worker pool Playwright asli (multi-user, isolasi task/job per userId).
+
+Tugas 59: Migrasi Database ke File JSON Atomic/Backup (NOTICE)
+
+CRUD semua data/config/job/log per userId di file JSON, atomic safe-write dan backup restore sebelum overwrite.
+
+Tugas 60: Multi-Tenancy, Isolasi Penuh antar-User (NOTICE)
+
+Audit arsitektur memory/file, pastikan tidak ada sharing antar user untuk proxy, job, log, config, audit, dsb.
+
+Tugas 61: Patch Robustness—Proxy Failover, File Save, Log Privacy
+
+Proxy auto failover/hot-swap, atomic file save JSON, masking audit log PII (privacy). Jika proxy error, auto swap, retry, dan log failover.
+
+Tugas 62: Engine Import Modular (txt, csv, docx, xlsx) di Frontend/Backend
+
+Develop parser modular, test validasi dan mapping otomatis format input target/proxy multiformat.
+
+Tugas 63: QA & Acceptance/Benchmark Test + Dokumen DTO JSON
+
+Create testkit automated/manual untuk semua scenario basic flow, import, multi-user, log, dan acceptance checklist. Dokumentasi DTO/JSON schema untuk endpoint/engine.
+
+FASE 4.2: Security Patch & Consent (Catatan dan Notice dari Roadmap)
+Tugas 64: Security Patch—SafeMode, Consent, Audit Log, Credential Enkripsi
+
+Implement SafeMode ON (block external click tanpa consent), credential proxy terenkripsi, audit log masking, frontend consent UI/control.
+
+Tugas 65: Consent Record untuk Action External Click
+
+Consent harus signed + log, UI & backend harus validasi, dokumentasi consent DTO.
+
+Tugas 66: Rate Limiting, Auto Throttle, Scale-Down Engine
+
+Patch rate limit login/API, throttling concurrency ketika CPU/mem limit, autoscale/auto reduce concurrency logic.
+
+CATATAN:
+
+Semua point di atas sudah diverifikasi dan di-crosscheck ke source code, roadmap .txt/.js, serta notice patch yang belum pernah eksekusi (status TODO, NOT DONE).
+
+Patch hanya dilakukan pada modul yang memang belum ada dan belum diterapkan, sesuai point notice/edge case roadmap dan spesifikasi.
+
+
+
+>>> ToDo List 12
+Copilot said: Baik — saya rangkum ulang dalam bentuk
+Baik — saya rangkum ulang dalam bentuk ToDoList yang runut, terstruktur, dan menandai setiap item apakah itu BACKEND atau FRONTEND. Tidak ada kode di sini — hanya rencana kerja / checklist terperinci berdasarkan semua keputusan yang telah kita sepakati (single-login + GRACE_PERIOD 5 menit, JSON user store, JWT berisi sessionId, dsb.). Setiap item berisi tujuan singkat, langkah yang harus dibuat, acceptance criteria, dan dependensi. Gunakan ini sebagai blueprint sebelum kita mulai coding.
+
+Ringkasan singkat (narasi): kita sudah sepakati kebijakan single-login dengan grace period 5 menit; penyimpanan user sederhana berbasis JSON per-user; token JWT berisi sessionId; WebSocket harus memverifikasi token dan mendukung heartbeat; frontend harus mengirim heartbeat tiap 60s dan menghapus token lokal setelah 5 menit jika sesi kadaluarsa. Sekarang saya buat ToDoList terstruktur agar implementasi konsisten.
+
+TO-DO LIST TERSTRUKTUR (BERFASE)
+
+Phase 0 — Persiapan & Hardening dasar
+
+P0-1 (BACKEND) — Environment & secrets
+
+Tujuan: Pastikan JWT_SECRET dan config sensitif berada di environment (.env) bukan hard-coded.
+Langkah: Tambah dukungan dotenv; baca JWT_SECRET dari process.env; validasi on startup.
+Acceptance: Server menolak start jika JWT_SECRET tidak tersedia; README menjelaskan cara set JWT_SECRET.
+Dependensi: none
+Prioritas: High
+P0-2 (BACKEND) — Robust server listen / graceful shutdown
+
+Tujuan: Tangani EADDRINUSE, dukungan env PORT, graceful SIGINT/SIGTERM.
+Acceptance: Server mencoba port atau menampilkan instruksi jika port dipakai; shutdown rapi pada SIGINT.
+Prioritas: High
+P0-3 (BACKEND) — Basic security middleware
+
+Tujuan: Pasang helmet, rate-limiter untuk /api/v1/login, dan CORS yang ketat.
+Acceptance: login rate limited, CORS hanya menerima origin yang diperlukan.
+Prioritas: High
+P0-4 (BACKEND) — Users dir & helper
+
+Tujuan: buat folder users/ dan helper load/save with atomic write; sanitize username filenames.
+Acceptance: dapat create/read/save user JSON per sanitized username.
+Prioritas: High
+P0-5 (BACKEND) — Audit log
+
+Tujuan: simple append-only logs per user (logs/<user>.log).
+Acceptance: setiap aksi login/logout/ws connect/run/log tercatat.
+Prioritas: Medium
+Phase 1 — Authentication, Session, Single-login & Heartbeat
+
+P1-1 (BACKEND) — Password hashing
+
+Tujuan: gunakan bcrypt untuk password storage & verify.
+Acceptance: setPassword helper, login verifies hashed password.
+Prioritas: High
+P1-2 (BACKEND) — Server-side session management
+
+Tujuan: implement session objects in users/<user>.json (sessionId, createdAt, lastSeen, status).
+Behavior: createSession, getSession, updateLastSeen, invalidateSession.
+Acceptance: sessions stored & modifiable via helpers.
+Prioritas: High
+P1-3 (BACKEND) — Login endpoint rules (single-login + GRACE_PERIOD)
+
+Tujuan: /api/v1/login enforces single active session; if active with lastSeen ≤ 5min => return 409.
+Acceptance: successful login returns JWT with payload { userId, sessionId }; 409 when other session active in grace.
+Prioritas: High
+P1-4 (BACKEND) — Logout & heartbeat REST endpoints
+
+Tujuan: POST /api/v1/logout invalidates session; POST /api/v1/heartbeat updates lastSeen.
+Acceptance: logout removes session; heartbeat updates lastSeen timestamp.
+Prioritas: High
+P1-5 (BACKEND) — Auth middleware verify + session check
+
+Tujuan: jwt.verify(token, SECRET) and verify sessionId exists & lastSeen within GRACE_PERIOD.
+Acceptance: protected endpoints require active session; expired sessions lead to 401 and removal.
+Prioritas: High
+P1-6 (BACKEND) — WebSocket verification + heartbeat handling
+
+Tujuan: WS server verifies token (jwt.verify), checks session, registers client mapping, handles application heartbeat messages (type: "heartbeat") to update session.lastSeen; do not immediately invalidate on close.
+Acceptance: WS connection only allowed if session active; heartbeat ACK sent; lastSeen updated.
+Prioritas: High
+P1-7 (FRONTEND) — WS connection + heartbeat + token storage behavior
+
+Tujuan: Frontend connects to WSS with token in query param: wss://host:port/?token=<JWT>, sends heartbeat every 60s (WS message type 'heartbeat'), and reacts to heartbeatAck.
+Acceptance: heartbeat sent every 60s while connected; server replies heartbeatAck; app updates lastSeen locally; on failed connection or server response indicating session expired, frontend clears token/local session.
+Prioritas: High
+P1-8 (FRONTEND) — Handling 409 / show proper UI & token lifetime
+
+Tujuan: If POST /login returns 409, show message "Active session exists—wait 5 minutes" and do not store token.
+Additional: frontend must remove stored token within 5 minutes after last-known server heartbeat if server says session expired.
+Acceptance: UI displays clear message, user cannot proceed; token not accepted until server allows login.
+Prioritas: High
+Phase 2 — Job Manager & run/start/stop integration (session-aware)
+
+P2-1 (BACKEND) — JobManager module & jobs/ storage
+
+Tujuan: encapsulate job lifecycle: create job record (jobs/<jobId>.json), start worker (simulator for now), progress persistence.
+Acceptance: /api/v1/run/start creates job file, registers running job in memory+file, sends jobInfo/status via WS; /run/stop stops job and updates file/status.
+Prioritas: High
+P2-2 (BACKEND) — session isolation for jobs
+
+Tujuan: only allow session owners to start/stop their own jobs; if session expires, job stops or is paused per policy.
+Acceptance: job rights enforced by authenticateJWT and job ownership check.
+Prioritas: High
+P2-3 (FRONTEND) — Payload validation & shape
+
+Tujuan: Ensure frontend sends validated appState payload (targets array with id, flowTarget, clickTarget; settings; geoProxies only enabled ones).
+Acceptance: run/start sends JSON of agreed DTO shape; UI renders response and updates jobInfo.
+Prioritas: High
+P2-4 (BACKEND) — WS progress events & updates
+
+Tujuan: JobManager emits progressUpdate, flowDoneUpdate, clickDoneUpdate, jobInfo messages to user via websocket.sendToUser.
+Acceptance: frontend Run tab receives and updates UI accordingly.
+Prioritas: High
+Phase 3 — Scheduler & persistence across restarts
+
+P3-1 (BACKEND) — Scheduler module (persist schedules)
+
+Tujuan: store schedules per user (in users/<user>.json or scheduler/<user>.json), register timers on boot.
+Acceptance: server restart re-registers scheduled jobs; scheduled jobs start job via JobManager at given time.
+Prioritas: Medium
+P3-2 (FRONTEND) — Scheduler UI integration
+
+Tujuan: allow user to create schedules, send to backend, and show status of scheduled tasks.
+Acceptance: creating schedule posts to API; Run tab shows scheduled tasks; server confirms acceptance.
+Prioritas: Medium
+Phase 4 — Proxy module, audit/metrics, SafeMode
+
+P4-1 (BACKEND) — Proxy tester & proxies store
+
+Tujuan: proxy-test worker that actually tests connectivity; store proxies per user proxies/<user>.json; expose endpoints to test & manage proxies.
+Acceptance: testProxy returns protocol/country/speed; job worker can request proxy by rotation policy.
+Prioritas: Medium
+P4-2 (BACKEND) — Audit & metrics persistence
+
+Tujuan: append actions to logs/<user>.log and save job metrics to jobs/<jobId>.json.
+Acceptance: metrics available for retrieval via API; audit contains login/logout/run events with timestamps.
+Prioritas: Medium
+P4-3 (BACKEND) — SafeMode / consent on external clicks
+
+Tujuan: enforce consent flag in user config/job config; reject run/start when externalClick requested but consent missing.
+Acceptance: /run/start validates and rejects with clear error if consent missing.
+Prioritas: Medium
+Phase 5 — Roles, licensing & limits
+
+P5-1 (BACKEND) — License enforcement (Free/Premium/Enterprise)
+
+Tujuan: enforce rules:
+Free: Direct-only targets, geo-proxy disabled, instanceCount ≤1, human surfing off.
+Premium: instanceCount ≤1 (per your rule).
+Enterprise: no limits.
+Acceptance: /run/start validates license constraints and returns 400 with reason if constraints violated.
+Prioritas: High (for policy)
+P5-2 (FRONTEND) — UI visibility & validation for license tiers
+
+Tujuan: hide/disable UI options not allowed for license tier; show warnings when user tries invalid config.
+Acceptance: UI prevents invalid config and displays reason.
+Prioritas: High
+Phase 6 — Playwright integration (future), scaling & ops
+
+P6-1 (BACKEND) — Worker pool for Playwright
+
+Tujuan: replace simulator with real Playwright worker pool respecting instanceCount and proxies; worker-per-session/job.
+Acceptance: Playwright workers start and report progress via JobManager; scalable with resource controls.
+Prioritas: Low (after core is stable)
+P6-2 (BACKEND/OPS) — Scaling, persistence, backup & logs rotation
+
+Tujuan: switch to SQLite if file store insufficient; implement log rotation & backup cron.
+Acceptance: safe persistence across restarts; documented backup process.
+Prioritas: Low (post-MVP)
+Cross-cutting tasks & notices (belum diimplementasikan / harus diingat)
+
+NOTICE-1 (BACKEND) — Atomic file writes & single-process assumption
+Node process is single process; if you run multiple processes you must change to DB (SQLite/Mongo). For now JSON + atomic write ok.
+NOTICE-2 (SECURITY) — rotate JWT_SECRET, use TLS valid certs in production, do not allow app.commandLine overrides in production.
+NOTICE-3 (BACKEND) — implement rate-limit on login and audit suspicious activity.
+NOTICE-4 (FRONTEND) — ensure host format is host:port (no https://) when connecting; show clearer login help text.
+NOTICE-5 (FRONTEND) — implement token lifecycle: remove token 5 minutes after last heartbeat if server rejects or heartbeat fails.
+NOTICE-6 (BACKEND) — multi-socket per user: current policy is single socket per user; if multiple allowed later, change clients map to userId=>array.
+Testing checklist (how we'll validate Phase0+1)
+
+T0.1 Backend startup ok with env JWT_SECRET set.
+T0.2 Create user and set password via helper.
+T0.3 Login from client A => receive JWT with sessionId; users/<user>.json contains session record.
+T0.4 Connect WS with token => receive status connected; send heartbeat every 60s; server updates lastSeen.
+T0.5 Try to login from client B within 5 minutes => server returns 409.
+T0.6 Close client A WS and do not send heartbeats; within 5 minutes client B still cannot login; after 5 minutes client B can login.
+T0.7 Logout from client A => session invalidated and client B can login immediately.
+T0.8 Start job from authenticated session => job created and progress events reach frontend (simulator).
+T0.9 Verify logs: logs/<user>.log contains events (login_success, ws_connect, etc.)
+Acceptance criteria for Phase0+1 (definition of Done)
+
+Server reads JWT_SECRET from env; refuses to start if missing.
+Users stored in users/ JSON files; password hashed.
+Login issues JWT including sessionId; session saved.
+Single active session rule enforced with GRACE_PERIOD = 5 minutes (409 if not expired).
+WebSocket requires token; heartbeat works; server updates lastSeen.
+Frontend can connect and receive messages; knows to send heartbeat every 60s.
+Basic audit logs per user present.
+Small UX / API contract reminders (for frontend implementers)
+
+Token localStorage key: trafficBusterToken (consistent across app).
+Host input should be like: localhost:5151 (no https://).
+WS connect url: wss://<host>?token=<token>.
+Heartbeat message: { type: "heartbeat" } every 60s; server replies { type: "heartbeatAck" }.
+Login success returns { success: true, token, user }.
+Login active session conflict returns 409 with message.
+/api/v1/heartbeat (optional fallback) with Authorization header to update lastSeen.
+Next actionable step (one-sentence)
+
+Saya siap mulai implementasi Phase0+1 backend modul-by-modul (userStore, audit, auth middleware, websocket changes, login/logout/heartbeat endpoints) dan kemudian menyiapkan instruksi frontend heartbeat patch — mulai sekarang kalau Anda restui saya implement kode.
+
+
+echo "JWT_SECRET=D3639B81E55959A0978F80A681173DF9E8C05F8D1F9D452A7ADB29EC691EC29148BD0B5B355BE90BBFBDB46A304C754928567C8D9EB5512928A927389071A95D66D03E25CC4709BBA5541706F83D4A3C3DC0E9DE866B3C79538A5427BF724F5C04A70F6F355F296284870F043CB300689602FD5904BEB67F9B4FEECDF4BA3675E85840C68FF78D5BCF5200A54A3E25F321F51F46160F937B2EB87ECC789B29A03AA8C5C233CE5D790C8516D2107327C444B8FB4777A7C59C6CA1D77E331CE747E162A85B038842B8B7C0124838E277F94E255B8C1B62E3CA086F8158340FA55EA0FFA91A9FD54A44802C7FDE99618823C95718132FF1B29DA98B" > .env
+
+USER
+node -e "require('./lib/userStore').setPassword('free','123').then(()=>console.log('user free: password set')).catch(e=>{console.error(e)})"
+node -e "require('./lib/userStore').setPassword('premium','123').then(()=>console.log('user premium: password set')).catch(e=>{console.error(e)})"
+node -e "require('./lib/userStore').setPassword('enterprise','123').then(()=>console.log('user enterprise: password set')).catch(e=>{console.error(e)})"
+
+ADMIN
+node -e "const u=require('./lib/userStore');(async()=>{await u.ensureUserExists('admin','admin@example.com','Enterprise');await u.setPassword('admin','admin123');let x=await u.loadUser('admin');x.role='admin';x.license='Enterprise';x.licenseConfig={maxInstances:20};await u.saveUser(x);console.log('admin user created')})()"
+
+Next actionable options — pick one
+
+I implement admin endpoints now (code full files): create admin controller, ensure admin-check middleware, include tests/ curl examples. — I can push full code for these routes and sample protectors.
+I implement admin UI (frontend) next — after API exists.
+I implement JobManager persistence & per-license enforcement (validate instanceCount on /run/start), so Enterprise limits are enforced by backend.
+Provide a short smoke-test script (automated) that logs in all 3 users, connects WS, sends heartbeats and starts/stops a demo job — useful to verify everything runs end-to-end.
+
+
+
+>>> ToDo List 12-1
+Prioritas 1 — FRONTEND: UI berbasis lisensi (P5-2)
+
+Disable instanceCount > 1 untuk Free/Premium.
+Sembunyikan/disable opsi geo-proxy untuk Free (sesuai kebijakan Anda).
+Pesan validasi jelas saat konfigurasi melanggar lisensi.
+Deliverable: perubahan penuh pada file tab-settings.js/tab-run.js atau file terkait, plus helper di utils.js bila perlu.
+Prioritas 2 — FRONTEND: Validasi payload run/start (P2-3)
+
+Memastikan shape DTO sesuai kesepakatan: generalTargets, settings, geoProxies (hanya yang enabled), dsb.
+Prevent run jika data tidak valid, tampilkan error terarah.
+Deliverable: patch penuh tab-run.js dan validator util terpisah (mis. validators.js) bila diperlukan.
+Prioritas 3 — FRONTEND: UX session awareness
+
+Banner/indikator WS status, retry state, dan countdown GRACE (opsional).
+Tooltip bantuan bila mendapat 409 (aktif session exists).
+Deliverable: patch UI non-invasif pada app.js dan utils.js.
+Opsional — ADMIN UI (setelah API mantap)
+
+Daftar user, ubah lisensi/role, invalidate sessions, status server.
+Deliverable: tab-admin.html + tab-admin.js penuh.
+Opsional — Scheduler (P3) tahap 1 (backend sudah belum diimplement berkala)
+
+Jika ingin mulai, kita draft API dan storage lalu UI dasar.
+
+
+
+>>> ToDo List 13
+Sangat baik. Mari kita lanjutkan tepat dari titik di mana Anda dan AI sebelumnya berhenti.
+
+Berdasarkan analisis saya, Anda baru saja meletakkan fondasi untuk arsitektur *backend* baru (Lisensi & Upload Dataset). Namun, fondasi ini belum divalidasi dan belum terintegrasi penuh.
+
+Agar aplikasi ini **segera fungsional**, kita perlu:
+
+1.  **Memvalidasi** fondasi yang baru saja diletakkan.
+2.  **Menyelesaikan** arsitektur upload dataset untuk semua tipe data.
+3.  **Menghubungkan** *backend* baru ini ke *frontend* yang sudah Anda bangun.
+4.  **Mengganti** simulator di *backend* dengan *engine* Playwright yang sesungguhnya.
+
+Berikut adalah **To-Do List 13**, rencana langkah-demi-langkah kita untuk mencapai fungsionalitas penuh.
+
+-----
+
+### 📋 To-Do List 13 (Validasi, Perluasan, Integrasi)
+
+#### FASE 1: Validasi & Perbaikan Fondasi Backend
+
+Kita harus memastikan kode yang baru saja ditambahkan (dari `backup percakapan AI.txt`) berfungsi 100% sebelum kita membangun di atasnya.
+
+  * **Tugas 50: Perbaiki Data Lisensi Pengguna**
+
+      * **Tujuan:** Memperbaiki data pengujian agar user `premium` dan `enterprise` memiliki lisensi yang benar.
+      * **Tindakan:**
+        1.  Buka file `smahud/trafficbuster/TrafficBuster-main/traffic-buster-backend/users/premium.json`. Ubah `"license": "Free"` menjadi `"license": "Premium"`.
+        2.  Buka file `smahud/trafficbuster/TrafficBuster-main/traffic-buster-backend/users/enterprise.json`. Ubah `"license": "Free"` menjadi `"license": "Enterprise"`.
+      * **Verifikasi:** Hentikan dan *restart* server `node server.js` Anda.
+
+  * **Tugas 51: Validasi Sistem Lisensi & Upload "Targets"**
+
+      * **Tujuan:** Menjalankan tes `curl` yang disarankan AI sebelumnya untuk memvalidasi bahwa `licenseMatrix.js` dan `datasetStore.js` bekerja bersama.
+      * **Tindakan:**
+        1.  **Login (Premium):** Lakukan `curl` login sebagai `premium`. Pastikan respons JSON mengembalikan `"license": "Premium"` dan *features* yang benar (misal: `maxTargets: 10`, `maxProxies: 10`).
+        2.  **Login (Free):** Lakukan `curl` login sebagai `free`. Pastikan `maxTargets: 1`.
+        3.  **Tes Upload (Premium):** Gunakan token `premium` Anda untuk menjalankan 5 langkah `curl` (start, chunk, finish, list, get) untuk meng-upload 3 target. Ini harus **berhasil**.
+        4.  **Tes Batas (Premium):** Coba ulangi langkah upload, tetapi ubah `totalItems: 11` (melebihi batas 10). Panggilan `finish` harus gagal dengan error `LIMIT_MAX_TARGETS`.
+        5.  **Tes Batas (Free):** Gunakan token `free`, coba upload 2 target. Panggilan `finish` harus gagal dengan error `LIMIT_MAX_TARGETS`.
+
+-----
+
+#### FASE 2: Perluasan Sistem Dataset (Melengkapi Arsitektur)
+
+Setelah FASE 1 sukses, kita akan memperluas `datasetStore` untuk menangani semua tipe data lainnya.
+
+  * **Tugas 52: Tambahkan Dukungan Dataset "Proxies"**
+
+      * **Tujuan:** Memperluas `lib/datasetStore.js` untuk menerima upload daftar proxy.
+      * **Tindakan:**
+        1.  Di `lib/datasetStore.js`, tambahkan `'proxies'` ke `ALLOWED_TYPES`.
+        2.  Buat fungsi baru `enforceProxiesShape(rawItems)` (mirip dengan `enforceTargetsShape`) untuk memvalidasi dan menormalisasi data proxy (misal: `host`, `port`, `user`, `pass`).
+        3.  Di `routes/datasets.js`, perbarui `router.post('/upload/finish')` untuk memanggil `enforceProxiesShape` jika `datasetType === 'proxies'`.
+        4.  Tambahkan validasi lisensi: `if (result.items > matrix.maxProxies) { ... }`.
+
+  * **Tugas 53: Tambahkan Dukungan Dataset "Platforms"**
+
+      * **Tujuan:** Memperluas `lib/datasetStore.js` untuk menerima upload daftar platform.
+      * **Tindakan:**
+        1.  Di `lib/datasetStore.js`, tambahkan `'platforms'` ke `ALLOWED_TYPES`.
+        2.  Buat fungsi `enforcePlatformsShape(rawItems)` untuk memvalidasi data platform (misal: `os`, `browser`, `resolution`).
+        3.  Di `routes/datasets.js`, perbarui `router.post('/upload/finish')` untuk memanggil `enforcePlatformsShape` jika `datasetType === 'platforms'`.
+        4.  Tambahkan validasi lisensi: `if (!matrix.allowPlatformCustom) { ... }`.
+
+  * **Tugas 54: Tambahkan Dukungan Dataset "Settings" (Opsional, tapi Direkomendasikan)**
+
+      * **Tujuan:** Memperluas `lib/datasetStore.js` untuk menyimpan *profil pengaturan* (misal: "Mode Cepat", "Mode SEO").
+      * **Tindakan:**
+        1.  Di `lib/datasetStore.js`, tambahkan `'settings'` ke `ALLOWED_TYPES`.
+        2.  Buat fungsi `enforceSettingsShape(rawItems)` untuk memvalidasi bahwa *item* (hanya boleh ada 1) adalah objek pengaturan yang valid.
+        3.  Di `routes/datasets.js`, tambahkan validasi lisensi: `if (!matrix.allowSettingsAdvanced) { ... }`.
+
+-----
+
+#### FASE 3: Integrasi Inti (Menghidupkan Tombol "Start")
+
+Ini adalah fase di mana kita menghubungkan semuanya.
+
+  * **Tugas 55: Modifikasi `POST /api/v1/run/start` (Kritis)**
+
+      * **Tujuan:** Mengubah endpoint `/run/start` agar menggunakan sistem dataset yang baru, sesuai kesepakatan arsitektur.
+      * **Tindakan:**
+        1.  Buka `smahud/trafficbuster/TrafficBuster-main/traffic-buster-backend/app.js` (atau `lib/jobManager.js` tempat logika `createJob` berada).
+        2.  Ubah logika `run/start` (atau `createJob`). *Payload* yang diterima tidak lagi berisi `config.generalTargets`, dll.
+        3.  Payload *baru* seharusnya hanya berisi *referensi* nama set, contoh:
+            ```json
+            {
+              "targetSet": "default_targets",
+              "proxySet": "us_proxies",
+              "platformSet": "mobile_devices",
+              "settingsProfile": "default_settings",
+              "overrides": { "instanceCount": 20 }
+            }
+            ```
+        4.  Logika `createJob` harus menggunakan `lib/datasetStore.getDataset(...)` untuk mengambil data 'targets', 'proxies', dan 'platforms' dari file JSON pengguna sebelum memulai pekerjaan.
+
+  * **Tugas 56: Integrasi Sisi Frontend (Menghubungkan UI)**
+
+      * **Tujuan:** Mengubah frontend agar menggunakan API upload dataset yang baru.
+      * **Tindakan:**
+        1.  Buat fungsi API *helper* baru di frontend (misal: di `auth.js` atau file baru `api.js`) yang menangani alur `start/chunk/finish` untuk meng-upload data.
+        2.  Modifikasi `smahud/trafficbuster/TrafficBuster-main/traffic-buster-frontend/tab-general.js` (tombol "Add" dan "Import"): Selain `appState.generalTargets.push(...)`, panggil API *helper* tadi untuk menyinkronkan data 'targets' ke backend.
+        3.  Lakukan hal yang sama untuk `smahud/trafficbuster/TrafficBuster-main/traffic-buster-frontend/tab-geolocation.js` (untuk 'proxies') dan `smahud/trafficbuster/TrafficBuster-main/traffic-buster-frontend/tab-platform.js` (untuk 'platforms').
+        4.  Modifikasi `smahud/trafficbuster/TrafficBuster-main/traffic-buster-frontend/tab-run.js`: Ubah *listener* `startButton` agar mengirim payload *referensi* baru (dari Tugas 55), bukan lagi mengirim seluruh `appState`.
+
+  * **Tugas 57: Ganti Simulator dengan Engine Playwright Nyata**
+
+      * **Tujuan:** Mengganti simulator `setInterval` di backend dengan *worker pool* Playwright yang sesungguhnya.
+      * **Tindakan:**
+        1.  Buka `smahud/trafficbuster/TrafficBuster-main/traffic-buster-backend/lib/jobManager.js`.
+        2.  Hapus (atau komentari) seluruh logika `setInterval` di dalam `createJob`.
+        3.  Implementasikan logika *worker pool* yang sebenarnya (misalnya menggunakan `Promise.allSettled` dengan batas konkurensi).
+        4.  Setiap *worker* harus:
+              * Meluncurkan Playwright.
+              * Menggunakan data `proxySet` dan `platformSet` yang telah di-load.
+              * Mengeksekusi simulasi (buka halaman, scroll, klik) berdasarkan `settingsProfile`.
+              * Melaporkan kembali `success` atau `fail`, serta `flowDoneUpdate` dan `clickDoneUpdate` melalui `sendToUser`.
+
+-----
+
+Rencana ini akan membawa kita dari validasi fondasi, melalui perluasan arsitektur, hingga integrasi penuh dan fungsionalitas *end-to-end*.
+
+Saya sarankan kita mulai dengan **Tugas 50** dan **Tugas 51** untuk memastikan fondasi kita kokoh. Silakan lakukan perbaikan dan pengujian tersebut, dan beri tahu saya hasilnya.
+
+
+
+
+>>> ToDo List 13 v2
+
+.
+
+📋 To-Do List 13 (Revisi Final, Siap Eksekusi)
+FASE 1: Finalisasi Fondasi Backend & Koneksi Lisensi
+
+Tugas 50: Perbaiki Data Lisensi Pengguna
+
+Tujuan: Memperbaiki data pengujian di file JSON backend.
+
+Status: Sudah ada di List 13.
+
+Tugas 50-B (BARU): Mengirim Matriks Fitur (License Features) saat Login/Validasi
+
+Tujuan: Memodifikasi API backend (/login dan /validate) agar mengirimkan objek features (berdasarkan licenseMatrix.js) ke frontend.
+
+Alasan: Ini adalah 'missing link'. Frontend (auth.js) membutuhkan data ini untuk mengunci UI, seperti yang Anda sebutkan di diskusi terakhir kita.
+
+Tindakan: Modifikasi server.part1.js (atau file terkait) untuk menyertakan features: licenseMatrix[user.license] dalam respons login dan validasi yang sukses.
+
+FASE 2: Perluasan Arsitektur Dataset Backend
+
+Tugas 51: Buat API untuk Proxies
+
+Tugas 52: Buat API untuk Platforms
+
+Tugas 53: Buat API untuk Settings Profiles
+
+Tugas 54: Perbarui datasetStore.js
+
+Tujuan: (Tugas 51-54) Melengkapi API routes/datasets.js dan logika lib/datasetStore.js untuk mengelola CRUD dan upload (start/chunk/finish) untuk ketiga tipe data baru tersebut, mengikuti pola "targets" yang ada.
+
+Status: Sudah ada di List 13.
+
+FASE 3: Integrasi Frontend & Finalisasi Payload
+
+Tugas 55: Integrasi UI Frontend dengan API Dataset
+
+Tujuan: Mengubah tab "Geolocation", "Platform", dan "Settings" di frontend agar melakukan fetch dan upload data ke API backend yang baru dibuat di Fase 2.
+
+Status: Sudah ada di List 13.
+
+Tugas 56: Ubah Payload run/start (Frontend)
+
+Tujuan: (Tugas Kritis dari To-Do List 12-1) Mengubah tab-run.js agar tidak lagi mengirim seluruh appState, melainkan mengirim payload referensi baru (misal: { targetSet: "default", proxySet: "premium", ... }).
+
+Status: Sudah ada di List 13.
+
+FASE 4: Implementasi Engine (Ditunda)
+
+Tugas 57: Ganti Simulator dengan Engine Playwright Nyata
+
+Status: Ditunda, sesuai kesepakatan kita.
+
+
+
+>> ToDo List 14
+**PAHAM SEKALI!** 💡
+
+Anda ingin saya **update To-Do List 14** berdasarkan **analisis terbaru** yang baru saja saya lakukan, lalu kita **eksekusi bertahap** sesuai urutan prioritas yang sudah diperbaiki.
+
+---
+
+# 📋 **To-Do List 14 (Updated - Final Version)**
+**Tanggal Update:** 2025-11-12 19:02:00 UTC  
+**Status Backend Saat Ini:** 40% Production-Ready
+
+---
+
+## **✅ SUDAH SELESAI (Tidak Perlu Dikerjakan Lagi)**
+
+| ID | Tugas | Status | File |
+|----|-------|--------|------|
+| P0-1 | Environment & JWT_SECRET | ✅ **DONE** | `.env`, `db.js` |
+| P0-2 | Server graceful shutdown | ✅ **DONE** | `server.js` |
+| P0-3 | Security middleware (Helmet, CORS, Rate limit login) | ✅ **DONE** | `app.js` |
+| P1-1 | Password hashing (bcrypt) | ✅ **DONE** | `lib/userStore.js` |
+| P1-2 | Session management | ✅ **DONE** | `lib/userStore.js` |
+| P1-3 | Login endpoint (single-login + GRACE_PERIOD) | ✅ **DONE** | `app.js` |
+| P1-4 | Logout & Heartbeat endpoints | ✅ **DONE** | `app.js` |
+| P1-5 | Auth middleware (JWT verify) | ✅ **DONE** | `authMiddleware.js` |
+| P1-6 | WebSocket verification | ✅ **DONE** | `websocket.js` |
+| **Tugas 50** | Perbaiki data lisensi user (premium, enterprise) | ✅ **DONE** | `users/*.json` |
+| **Tugas 50-B** | Login & Validate kirim `features` object | ✅ **DONE** | `app.js` (baru saja!) |
+| **SessionCleaner** | Session timeout cleaner | ✅ **DONE** | `server.js` (baru saja!) |
+
+---
+
+## **🔥 PRIORITAS 1 - CRITICAL (Blocking MVP) - ESTIMASI: 6-8 JAM**
+
+### **FASE 2A: Lengkapi API Dataset (Tugas 51-54)**
+
+| ID | Tugas | Estimasi | Status | File |
+|----|-------|----------|--------|------|
+| **Tugas 51** | Test API Dataset (Proxies) | 1 jam | ⚠️ **TODO** | `lib/datasetStore.js`, `routes/datasets.js` |
+| **Tugas 52** | Test API Dataset (Platforms) | 1 jam | ⚠️ **TODO** | `lib/datasetStore.js`, `routes/datasets.js` |
+| **Tugas 53** | Test API Dataset (Settings) | 1 jam | ⚠️ **TODO** | `lib/datasetStore.js`, `routes/datasets.js` |
+| **Tugas 54** | Validasi Lisensi per Dataset Type | 1 jam | ⚠️ **TODO** | `routes/datasets.js` |
+
+**Detail Tugas 51-54:**
+```javascript
+// Yang sudah ada (DONE):
+- enforceTargetsShape() ✅
+- enforceProxiesShape() ✅
+- enforcePlatformsShape() ✅
+- enforceSettingsShape() ✅
+
+// Yang perlu dilakukan:
+1. Test manual upload proxies via curl/Postman
+2. Test manual upload platforms via curl/Postman
+3. Test manual upload settings via curl/Postman
+4. Tambahkan validasi lisensi di /upload/finish:
+   - if (datasetType === 'proxies') → check matrix.maxProxies
+   - if (datasetType === 'platforms') → check matrix.allowPlatformCustom
+   - if (datasetType === 'settings') → check matrix.allowSettingsAdvanced
+```
+
+---
+
+### **FASE 2B: Rate Limiting & Security**
+
+| ID | Tugas | Estimasi | Status | File |
+|----|-------|----------|--------|------|
+| **Tugas 66A** | Rate limit untuk `/data/upload/*` | 1 jam | ⚠️ **TODO** | `app.js` atau `routes/datasets.js` |
+| **Tugas 66B** | Rate limit untuk `/run/start` | 30 min | ⚠️ **TODO** | `app.js` |
+
+**Detail Tugas 66:**
+```javascript
+// Tambahkan rate limiter baru di app.js:
+const uploadLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30, // 30 requests per minute
+  message: { success: false, message: 'Too many upload requests' }
+});
+
+// Apply ke routes:
+app.use('/api/v1/data/upload', uploadLimiter);
+```
+
+---
+
+### **FASE 2C: Multi-User Testing**
+
+| ID | Tugas | Estimasi | Status | File |
+|----|-------|----------|--------|------|
+| **Tugas 56** | QA Test Multi-User Isolation | 2 jam | ⚠️ **TODO** | Test Script |
+
+**Detail Tugas 56:**
+```bash
+# Scenario test:
+1. Login user A (free) dan user B (premium) bersamaan
+2. User A upload 1 target → sukses
+3. User A upload 2 target → gagal (LIMIT_MAX_TARGETS)
+4. User B upload 10 target → sukses
+5. User B upload 11 target → gagal (LIMIT_MAX_TARGETS)
+6. User A tidak bisa akses dataset user B
+7. User B tidak bisa akses dataset user A
+```
+
+---
+
+## **🚀 PRIORITAS 2 - HIGH (Untuk Production) - ESTIMASI: 3-5 HARI**
+
+### **FASE 3A: Refactor `/run/start` (Tugas 55-56)**
+
+| ID | Tugas | Estimasi | Status | File |
+|----|-------|----------|--------|------|
+| **Tugas 55** | Refactor `/run/start` gunakan referensi dataset | 4 jam | ❌ **TODO** | `app.js`, `lib/jobManager.js` |
+| **Tugas 56** | Frontend kirim payload referensi | - | ❌ **TODO** | Frontend (nanti) |
+
+**Detail Tugas 55:**
+```javascript
+// SEBELUM (saat ini):
+POST /api/v1/run/start
+{
+  "generalTargets": [ {url: "...", ...}, ... ],  // ← data penuh
+  "geoProxies": [ ... ],
+  "platforms": [ ... ],
+  "settings": { ... }
+}
+
+// SESUDAH (target):
+POST /api/v1/run/start
+{
+  "targetSet": "default",        // ← referensi ke dataset
+  "proxySet": "us_proxies",      // ← referensi ke dataset
+  "platformSet": "mobile",       // ← referensi ke dataset
+  "settingsProfile": "fast_mode", // ← referensi ke dataset
+  "overrides": {                 // ← optional
+    "instanceCount": 5
+  }
+}
+
+// Backend logic di app.js:
+const targets = await datasetStore.getDataset(userId, 'targets', targetSet);
+const proxies = await datasetStore.getDataset(userId, 'proxies', proxySet);
+const platforms = await datasetStore.getDataset(userId, 'platforms', platformSet);
+const settings = await datasetStore.getDataset(userId, 'settings', settingsProfile);
+```
+
+---
+
+### **FASE 3B: WebSocket Real-Time (Tugas 31-34)**
+
+| ID | Tugas | Estimasi | Status | File |
+|----|-------|----------|--------|------|
+| **Tugas 31** | Frontend generate UUID untuk targets | - | ⚠️ **TODO** | Frontend (nanti) |
+| **Tugas 32** | Backend simpan UUID & flowTarget | 1 jam | ⚠️ **TODO** | `lib/jobManager.js` |
+| **Tugas 33** | Backend kirim `flowDoneUpdate` via WebSocket | 2 jam | ⚠️ **TODO** | `lib/jobManager.js`, `websocket.js` |
+| **Tugas 34** | Frontend handle `flowDoneUpdate` | - | ⚠️ **TODO** | Frontend (nanti) |
+
+**Detail Tugas 33:**
+```javascript
+// Di lib/jobManager.js (saat flow selesai):
+sendToUser(userId, {
+  type: "flowDoneUpdate",
+  targetId: target.id,        // ← UUID dari frontend
+  flowDone: 5,                // ← increment dari database
+  flowTarget: target.flowTarget
+});
+
+// Frontend akan terima dan update tabel
+```
+
+---
+
+### **FASE 3C: Playwright Worker Pool (Tugas 57-58)**
+
+| ID | Tugas | Estimasi | Status | File |
+|----|-------|----------|--------|------|
+| **Tugas 57** | Design Playwright worker pool architecture | 4 jam | ❌ **TODO** | Desain |
+| **Tugas 58** | Implement Playwright worker pool | 3 hari | ❌ **TODO** | `lib/playwrightEngine.js` (baru) |
+
+**Detail Tugas 58:**
+```javascript
+// Buat file baru: lib/playwrightEngine.js
+// Workers:
+// - Respek instanceCount
+// - Gunakan proxy dari proxySet
+// - Gunakan platform dari platformSet
+// - Follow settings (scroll, click, dwell time)
+// - Report progress via sendToUser()
+```
+
+---
+
+## **⚡ PRIORITAS 3 - MEDIUM (Nice to Have) - ESTIMASI: 1 MINGGU**
+
+### **FASE 4A: Proxy Robustness (Tugas 61)**
+
+| ID | Tugas | Estimasi | Status | File |
+|----|-------|----------|--------|------|
+| **Tugas 61A** | Proxy test API | 2 jam | ❌ **TODO** | `lib/proxyTester.js` (baru) |
+| **Tugas 61B** | Proxy failover & hot-swap | 4 jam | ❌ **TODO** | `lib/proxyManager.js` (baru) |
+
+---
+
+### **FASE 4B: SafeMode & Consent (Tugas 64-65)**
+
+| ID | Tugas | Estimasi | Status | File |
+|----|-------|----------|--------|------|
+| **Tugas 64** | Implementasi SafeMode (block external click) | 2 jam | ❌ **TODO** | `lib/jobManager.js` |
+| **Tugas 65** | Consent mechanism & storage | 3 jam | ❌ **TODO** | `lib/consent.js` (baru) |
+
+**Detail Tugas 64-65:**
+```javascript
+// SafeMode logic:
+if (settings.humanSurfing.externalClick && !user.consent) {
+  return res.status(400).json({
+    code: 'CONSENT_REQUIRED',
+    message: 'External click requires consent'
+  });
+}
+```
+
+---
+
+### **FASE 4C: Scheduler (Tugas P3)**
+
+| ID | Tugas | Estimasi | Status | File |
+|----|-------|----------|--------|------|
+| **Tugas P3-1** | Scheduler storage & API | 4 jam | ❌ **TODO** | `lib/scheduler.js` (baru) |
+| **Tugas P3-2** | Cron job integration | 2 jam | ❌ **TODO** | `server.js` |
+
+---
+
+### **FASE 4D: File Import Modular (Tugas 62)**
+
+| ID | Tugas | Estimasi | Status | File |
+|----|-------|----------|--------|------|
+| **Tugas 62A** | Parser `.txt`, `.csv` | 2 jam | ❌ **TODO** | `lib/fileParser.js` (baru) |
+| **Tugas 62B** | Parser `.docx` (mammoth) | 2 jam | ❌ **TODO** | `lib/fileParser.js` |
+| **Tugas 62C** | Parser `.xlsx` (xlsx) | 2 jam | ❌ **TODO** | `lib/fileParser.js` |
+
+---
+
+## **🧪 PRIORITAS 4 - TESTING & QA (Tugas 63)**
+
+| ID | Tugas | Estimasi | Status | File |
+|----|-------|----------|--------|------|
+| **Tugas 63A** | Unit test (Jest) | 1 hari | ❌ **TODO** | `tests/` |
+| **Tugas 63B** | Integration test | 1 hari | ❌ **TODO** | `tests/` |
+| **Tugas 63C** | Load test (10k flows) | 4 jam | ❌ **TODO** | Test script |
+| **Tugas 63D** | Security audit | 4 jam | ❌ **TODO** | Audit report |
+
+---
+
+## **📊 ROADMAP EKSEKUSI (Urutan Bertahap)**
+
+```
+HARI 1 (8 jam):
+├─ Tugas 51-54: Test & validasi dataset API (proxies, platforms, settings) - 4 jam
+├─ Tugas 66: Rate limiting upload & run - 1.5 jam
+└─ Tugas 56 (QA): Multi-user isolation test - 2 jam
+
+HARI 2-3 (16 jam):
+├─ Tugas 55: Refactor /run/start gunakan referensi - 4 jam
+├─ Tugas 32-33: WebSocket flowDoneUpdate - 3 jam
+└─ Tugas 57-58 (Design): Playwright worker pool - 4 jam
+
+MINGGU 2:
+├─ Tugas 58 (Impl): Playwright worker pool - 3 hari
+├─ Tugas 61: Proxy robustness - 6 jam
+└─ Tugas 64-65: SafeMode & Consent - 5 jam
+
+MINGGU 3:
+├─ Tugas P3: Scheduler - 6 jam
+├─ Tugas 62: File import - 6 jam
+└─ Tugas 63: Testing & QA - 2 hari
+```
+
+---
+
+## **🎯 MILESTONE & TARGET**
+
+| Milestone | Target Date | Status |
+|-----------|-------------|--------|
+| **MVP (Minimal Viable Product)** | Hari 1-2 | ⚠️ **In Progress** |
+| **Beta (WebSocket + Playwright)** | Hari 3-7 | ❌ **Not Started** |
+| **Production Ready** | Minggu 3 | ❌ **Not Started** |
+
+---
+
+## **✅ ACCEPTANCE CRITERIA (Definisi "SELESAI")**
+
+### **MVP (60% Ready):**
+- ✅ Login kirim features
+- ✅ Dataset upload (targets, proxies, platforms, settings) tested
+- ✅ Multi-user isolation tested
+- ✅ Rate limiting applied
+
+### **Beta (80% Ready):**
+- ✅ `/run/start` gunakan referensi dataset
+- ✅ WebSocket `flowDoneUpdate` working
+- ✅ Playwright worker pool (basic)
+
+### **Production (100% Ready):**
+- ✅ SafeMode & Consent
+- ✅ Proxy failover
+- ✅ Scheduler
+- ✅ Unit & integration tests
+
+---
+
+**Apakah urutan To-Do List 14 ini sudah sesuai? Jika OK, saya akan mulai eksekusi dari Tugas 51 (Test Dataset API untuk Proxies)!** 🚀

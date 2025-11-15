@@ -1,0 +1,548 @@
+Versi 2
+# Traffic Buster — Spesifikasi Teknis Lengkap (Modular .NET Framework)
+
+## Ringkasan singkat developer
+
+* Target stack: 
+Option 1 
+**.NET Framework 4.8** (desktop WPF recommended) — build dengan **Visual Studio 2022**.
+Option 2
+** .NET Framework 4.8 Sebagai front End GUI, Node.js Ingine (Playright) sebagai service local/agent. Expose REST API (control endpoints:Start,Stop,Config), WebSocket endpoints untuk streaming log/metrics/progrress
+* Arsitektur: **Modular solution** (multi-project) dengan boundary jelas per Tab: General, GeoLocation, Platform, Settings, Run, Core shared libs (Engine, Persistence, Utils).
+* Concurrency: **Task-based concurrency** (TPL) + **Worker pool**; setiap *Instance* adalah satu `FlowWorker` (Task) yang berjalan sendiri dengan konteks ter-isolasi (fingerprint, proxy, platform).
+* Rendering strategy: start dengan **HTTP-simulator (lightweight)**; plugin untuk headless browser (CefSharp/PuppeteerSharp/Selenium) sebagai opsi (plugin-based).
+* Safety: default SafeMode ON; audit log & consent required untuk external ad clicks.
+* Packaging: build EXE installer via Visual Studio Installer / WiX / Inno Setup.
+
+---
+
+## 1) Prinsip Modular & Pemisahan Tanggung Jawab
+
+Setiap Tab adalah modul independen (project/library) yang expose API surface minimal ke `TrafficEngine`. Modul hanya berkomunikasi lewat kontrak (interfaces) dan event bus. Ini membuat pengembangan paralel dan unit testing mudah.
+
+Modul utama:
+
+* UI Layer (WPF): `TrafficBuster.UI` (views per tab)
+* Core Library: `TrafficBuster.Core` (domain model, scheduler, worker)
+* Proxy Manager: `TrafficBuster.Proxy`
+* Platform Manager: `TrafficBuster.Platform`
+* Config & Persistence: `TrafficBuster.Storage`
+* Renderers: `TrafficBuster.Renderers` (HTTP simulator + Headless plugin)
+* Utils & Common: `TrafficBuster.Utils`
+* Tests: `TrafficBuster.Tests`
+
+---
+
+## 2) Workflow per Tab — terpisah & tidak tumpang tindih
+
+### A. Tab General (Data Input & Import)
+
+Responsibility:
+
+* Tambah / edit / hapus URL
+* Import URL (Fetch URL) dari file (.txt/.csv/.docx/.xlsx)
+* Pilih Traffic Type per URL: Direct / Organic / Referral / Random
+* Jika Organic + Search Engine → Keyword(s) (comma-separated) → generator membuat entri per keyword
+* Jika Import massal dan user memilih *Random Traffic Type* atau *Random Organic*, General module hanya menandai entri dengan flag `TrafficType=Random` dan menyediakan distribution options (ratio). **Tidak** menghasilkan flows; hanya menyiapkan `TargetList`.
+
+Flow:
+
+1. User import → `General` ekstrak URL → validate each URL (regex `https?://...`) → create `TargetEntry` objects → add to `Project.Targets`.
+2. Optionally user assigns traffic type per entry or mass-action.
+3. `General` exposes `IProjectRepository.SaveTargets()`.
+
+Key API (I/F):
+
+```csharp
+public interface IGeneralService {
+  Task<ImportResult> ImportUrlsAsync(Stream fileStream, string fileType);
+  void AddTarget(TargetEntry entry);
+  IReadOnlyList<TargetEntry> GetTargets();
+}
+```
+
+### B. Tab Geo Location (Proxy Management)
+
+Responsibility:
+
+* Manage proxy list only (import, test once on add, enable/disable individual)
+* DNS configuration (Use Proxy DNS / Host PC DNS / Custom DNS list)
+* Determine country via GeoIP lookup (on import/test only)
+* Expose list of `ProxyEntry` to engine
+* **No Proxy Rotation Policy here** (moved to Settings)
+
+Flow:
+
+1. Import proxies -> `ProxyManager.Parse()` -> `ProxyManager.TestAll()` (parallel but one-time) -> mark success/fail, speed, type, country.
+2. User toggles `GlobalProxyEnabled` (global switch). If disabled, engine uses direct connection.
+
+Key API:
+
+```csharp
+public interface IProxyManager {
+  Task<ProxyImportResult> ImportAsync(Stream fileStream);
+  Task TestProxyAsync(ProxyEntry proxy);
+  IReadOnlyList<ProxyEntry> GetActiveProxies();
+  bool GlobalProxyEnabled { get; set; }
+  DnsMode DnsMode { get; set; } // ProxyDns, HostDns, CustomDns
+}
+```
+
+### C. Tab Platform (Fingerprint Management)
+
+Responsibility:
+
+* Define platform profiles (OS/Device first as requested), versions, browser, resolution
+* Generator for Random List templates
+* Auto-generate User-Agent strings from combination (no manual UA by default)
+* Expose `PlatformProfile` list to engine
+
+Flow:
+
+1. User creates profiles (OS → Version → Browser → BrowserVersion → Resolution).
+2. Stored as `PlatformTemplate`. `PlatformManager.GenerateRandom(n)` produces a set.
+
+API:
+
+```csharp
+public interface IPlatformManager {
+  void AddProfile(PlatformProfile profile);
+  IReadOnlyList<PlatformProfile> GetProfiles();
+  List<PlatformProfile> GenerateRandomProfiles(int count);
+}
+```
+
+### D. Tab Settings (Global Config & Proxy Switching Policy)
+
+Responsibility:
+
+* All runtime policies: SessionDuration, PlatformSwitching, TrafficDelay, PageTraffic, PageOrder, ProxySwitchingPolicy, HumanSurfing params, InstanceCount
+* **ProxySwitchingPolicy** values: `PerFlow`, `OnceAllPages`, `TimeBased(ms)` + `UseRandomProxy`
+* InstanceCount: number of simultaneous `FlowWorker` allowed
+* Expose configuration model to engine and persist via `ConfigManager`
+
+Flow:
+
+1. User sets InstanceCount and policies.
+2. `SettingsModule` validates and stores config to `Project.Settings`.
+3. Engine uses this config when scheduling.
+
+API:
+
+```csharp
+public interface ISettingsService {
+  ProjectSettings GetSettings();
+  void ApplySettings(ProjectSettings settings);
+}
+```
+
+### E. Tab Run (Execution, Monitoring, Logging)
+
+Responsibility:
+
+* Start/Pause/Resume/Stop simulation
+* Real-time display: per-worker status, current URL, proxy, platform, logs, CPU/RAM metrics
+* Accept `DryRun` parameter
+* Provide graceful stop semantics (complete current flow or immediate stop)
+* Expose runtime telemetry & final report export
+
+Flow:
+
+1. User clicks Start -> `RunController.Start(project)` -> `TrafficEngine.CreateFlows()` -> enqueue flows into `WorkQueue`.
+2. Scheduler pulls flows respecting `InstanceCount` and starts `FlowWorker` tasks.
+3. FlowWorker obtains proxy via `ProxySelector` according to `ProxySwitchingPolicy`.
+4. FlowWorker executes steps (render/load, scroll, dwell, click) using selected renderer; reports events to `AuditLogger` and `RunController`.
+5. Run tab subscribes to events and updates UI in real-time.
+
+API:
+
+```csharp
+public interface IRunController {
+  Task StartAsync(Project project, bool dryRun = false);
+  Task PauseAsync();
+  Task ResumeAsync();
+  Task StopAsync(bool graceful = true);
+  IObservable<RunEvent> Events { get; }
+}
+```
+
+---
+
+## 3) Domain Model (Data Contracts)
+
+Key models (properties simplified for readability):
+
+```csharp
+class Project {
+  Guid Id;
+  string Name;
+  List<TargetEntry> Targets;
+  List<PlatformProfile> Platforms;
+  List<ProxyEntry> Proxies;
+  ProjectSettings Settings;
+  ConsentRecord Consent;
+}
+
+class TargetEntry {
+  Guid Id;
+  string Url;
+  string Domain;
+  TrafficType TrafficType; // Direct, Organic, Referral, Random
+  TrafficSource Source; // SearchEngine or ReferralSite or Custom
+  List<string> Keywords; // only if SearchEngine
+}
+
+class PlatformProfile {
+  Guid Id;
+  OSDevice OS;
+  string OSVersion;
+  Browser Browser;
+  string BrowserVersion;
+  string Resolution;
+  string UserAgent; // auto-generated
+}
+
+class ProxyEntry {
+  Guid Id;
+  string Host;
+  int Port;
+  string UsernameEncrypted;
+  string PasswordEncrypted;
+  int LastPingMs;
+  ProxyType Type; // HTTP, SOCKS4, SOCKS5
+  string Country;
+  bool Enabled;
+}
+
+class ProjectSettings {
+  int InstanceCount;
+  SessionDurationMode DurationMode; // Constant / Variable
+  int SessionMsConstant;
+  int SessionMsMin;
+  int SessionMsMax;
+  ProxySwitchPolicy ProxyPolicy; // PerFlow, OnceAllPages, TimeBased
+  bool UseRandomProxy;
+  int ProxyRotateMsMin;
+  int ProxyRotateMsMax;
+  PlatformSwitchMode PlatformSwitch;
+  DelayMode TrafficDelay;
+  PageTrafficMode PageTrafficMode; // Total or AveragePerPage
+  int PageTrafficValue;
+  // Human Simulation
+  bool EnableAutoScroll;
+  int ScrollIntervalMs;
+  int ScrollLengthPx;
+  bool EnableClickPerThousand;
+  int ClickInternalPer1000;
+  int ClickExternalPer1000;
+}
+```
+
+---
+
+## 4) Class Diagram (Teks UML — inti & method signatures)
+
+```
++---------------------------------------------------+
+| TrafficEngine (Core)                              |
++---------------------------------------------------+
+| - project: Project                                |
+| - queue: BlockingCollection<Flow>                 |
+| - workers: List<FlowWorker>                       |
+| - settings: ProjectSettings                       |
++---------------------------------------------------+
+| + StartAsync(dryRun)                              |
+| + PauseAsync()                                    |
+| + ResumeAsync()                                   |
+| + StopAsync(graceful)                             |
+| - CreateFlows() : void                             |
++---------------------------------------------------+
+
++---------------------+     +---------------------+
+| ProxyManager        |<>---| ProxySelector       |
++---------------------+     +---------------------+
+| + ImportAsync(file) |     | + SelectProxy(context): ProxyEntry |
+| + TestAllAsync()    |     | + MarkFailed(proxy)                |
+| + GetActive()       |     +---------------------+
++---------------------+
+
++---------------------+     +---------------------+
+| PlatformManager     |     | RendererFactory     |
++---------------------+     +---------------------+
+| + AddProfile()      |     | + Create(rendererType) |
+| + GenerateRandom()  |     | + RegisterPlugin()     |
++---------------------+     +---------------------+
+
++---------------------+     +---------------------+
+| FlowWorker          |     | Flow                |
++---------------------+     +---------------------+
+| - id                |     | - id                |
+| - cancellationToken |     | - target            |
+| + ExecuteAsync(flow)|
+| + ReportEvent(ev)   |
++---------------------+
+```
+
+---
+
+## 5) Scheduling & Concurrency Model (detil implementasi)
+
+* **Scheduler**: `TrafficEngine` maintains a `BlockingCollection<Flow>` queue. `CreateFlows()` converts project targets and page traffic settings into `Flow` objects and enqueues them.
+
+* **Worker Pool**: `InstanceCount` defines max degree of parallelism. For each available slot, schedule `FlowWorker.ExecuteAsync(flow)`. Use `SemaphoreSlim(InstanceCount)` to control concurrency.
+
+* **FlowWorker Execution**:
+
+  1. Acquire proxy via `ProxySelector.SelectProxy(context)` according to `ProxySwitchPolicy`.
+  2. Ensure proxy connectivity established (only if proxy enabled globally).
+  3. Instantiate `IRenderer` from `RendererFactory` (HTTP-simulator by default).
+  4. Execute steps: `LoadPage()` → `Scroll()` → `Dwell()` → `ClickInternal/External()` according to click-rates (per 1000).
+  5. Log events to `AuditLogger`.
+  6. Release proxy (or mark for rotate) and return worker slot.
+
+* **Isolation**: Each `FlowWorker` holds its own `FingerprintContext` (platform+UA+screen), proxy, and random seed — making them sandboxed.
+
+---
+
+## 6) Renderer Strategy & Plugins
+
+* **IRenderer** interface:
+
+```csharp
+public interface IRenderer {
+  Task<RenderResult> LoadPageAsync(string url, RequestContext ctx, CancellationToken ct);
+  Task ScrollAsync(ScrollOptions options, CancellationToken ct);
+  Task ClickAsync(ClickOptions options, CancellationToken ct);
+  Task DisposeAsync();
+}
+```
+
+* Implementations:
+
+  * `HttpSimulatorRenderer` — uses plain HTTP requests (fast, scalable).
+  * `HeadlessBrowserRenderer` — plugin (CefSharp/PuppeteerSharp/Selenium) for realistic JS rendering (slower, heavier).
+* `RendererFactory` selects based on flow settings (headless only for verification, default HTTP-simulator).
+
+---
+
+## 7) Persistence & Config
+
+* Config saved as JSON (`.tbconfig`) or YAML. Use `TrafficBuster.Storage` to read/write.
+* Proxy credentials **encrypted** using machine key (DPAPI) or AES with passphrase.
+* Project and presets stored in SQLite DB (`projects.db`) and folder `~/TrafficBuster/Projects/`.
+
+Sample saved file structure:
+
+```
+/TrafficBusterData
+  /projects
+    <projectId>.tbconfig
+  projects.db
+  /logs
+    run-<timestamp>.log
+  /export
+```
+
+---
+
+## 8) Validation, Acceptance Criteria & Safety
+
+### Validation rules (applied on import & before run)
+
+* URL regex: `^https?://[^\s/$.?#].[^\s]*$`
+* Proxy format: `host:port` or `host:port:user:pass`
+* At least one active target in `Project.Targets` to start run
+* If `EnableClickExternal` and domain not in `Project.TargetDomainList` → require explicit consent (checkbox + typed confirmation)
+
+### Acceptance Criteria (concrete)
+
+* Import 100 URLs (.csv) → `General` shows 100 entries, all valid or labeled invalid.
+* Import 1000 proxies → `ProxyManager.TestAllAsync()` completes with status for each within X minutes (based on parallelism).
+* Set `InstanceCount = 10` & `TotalFlow = 100,000` → scheduler runs up to 10 concurrent `FlowWorker`s and finishes all flows (throughput meets hardware limits).
+* If `ProxyEnabled = false` → engine uses direct connection for all flows; `ProxyManager` not invoked.
+* If `Click per 1000 views` configured → aggregated click counts at end ~ expected ± variance (statistical tolerance configurable).
+* Dry-run (100 flows) must not perform external ad clicks if SafeMode ON.
+
+---
+
+## 9) Testing Plan & Metrics
+
+### Unit tests
+
+* `ProxyManager.Parse()`, `ProxyManager.TestOne()`
+* `PlatformManager.GenerateRandomProfiles()`
+* `Flow creation` logic (Target + PageTraffic → Flow count)
+* `ProxySelector` strategy permutations
+
+### Integration tests
+
+* Simulate small project with 10 targets and 5 proxies — run engine in dry-run and confirm expected events/logs.
+* Headless plugin integration (if used) must be tested separately (heavy integration tests).
+
+### Performance tests
+
+* Benchmark with HTTP-simulator only: target 10k flows/min (hardware dependent). Measure RPS, CPU, memory, %fail.
+* Profiling to detect contention around DB or I/O.
+
+### Metrics to collect
+
+* Flows started/completed/failed
+* RPS global & per worker
+* Average page load time (simulated)
+* Proxy error rate
+* CPU & memory usage
+* Click distribution (internal/external)
+
+---
+
+## 10) Security & Ethics
+
+* Default `SafeMode = ON` — blocks external ad network clicks.
+* Exported logs obfuscated for credentials.
+* Consent record (signed timestamp) stored per project if external clicks allowed.
+* Proxy credentials encrypted at rest with DPAPI.
+* Rate limiting & jitter to avoid hammering targets.
+
+---
+
+## 11) Recommended NuGet & Libraries (implementation helpers)
+
+*(pilihan—sesuaikan tim/keputusan tech)*
+
+* `Newtonsoft.Json` (config serialization)
+* `System.Data.SQLite` / `Dapper` (persistence)
+* `CefSharp` or `PuppeteerSharp` / `Selenium.WebDriver` (headless plugins)
+* `NLog` / `Serilog` (logging)
+* `CsvHelper` (CSV import/export)
+* `DocumentFormat.OpenXml` (docx/xlsx extract) or `OpenXml SDK`
+* `SharpZipLib` (if needed for packaging)
+
+> Catatan: pastikan lisensi dan dependency untuk headless browsers sesuai.
+
+---
+
+## 12) Struktur Folder & Visual Studio Solution (detail)
+
+Solution name: `TrafficBuster.sln`
+
+```
+/TrafficBuster
+├─ /docs
+│   ├─ architecture.md
+│   ├─ ui-spec.md
+│   └─ testing-plan.md
+├─ /build
+├─ /src
+│   ├─ /TrafficBuster.UI                    (WPF App)
+│   │   ├─ App.xaml
+│   │   ├─ MainWindow.xaml
+│   │   ├─ Views/
+│   │   │  ├─ GeneralView.xaml
+│   │   │  ├─ GeoLocationView.xaml
+│   │   │  ├─ PlatformView.xaml
+│   │   │  ├─ SettingsView.xaml
+│   │   │  └─ RunView.xaml
+│   │   └─ ViewModels/
+│   │      ├─ GeneralViewModel.cs
+│   │      ├─ GeoLocationViewModel.cs
+│   │      ├─ PlatformViewModel.cs
+│   │      └─ RunViewModel.cs
+│   │
+│   ├─ /TrafficBuster.Core                  (Class Library)
+│   │   ├─ TrafficEngine.cs
+│   │   ├─ FlowWorker.cs
+│   │   ├─ Scheduler.cs
+│   │   └─ Models/
+│   │       ├─ Project.cs
+│   │       ├─ TargetEntry.cs
+│   │       └─ ProjectSettings.cs
+│   │
+│   ├─ /TrafficBuster.Proxy                  (Class Library)
+│   │   ├─ ProxyManager.cs
+│   │   └─ ProxySelector.cs
+│   │
+│   ├─ /TrafficBuster.Platform               (Class Library)
+│   │   ├─ PlatformManager.cs
+│   │   └─ PlatformProfile.cs
+│   │
+│   ├─ /TrafficBuster.Renderers              (Class Library)
+│   │   ├─ IRenderer.cs
+│   │   ├─ HttpSimulatorRenderer.cs
+│   │   └─ HeadlessBrowserRenderer.cs (plugin)
+│   │
+│   ├─ /TrafficBuster.Storage                (Class Library)
+│   │   ├─ ConfigManager.cs
+│   │   ├─ SqliteRepository.cs
+│   │   └─ ExportService.cs
+│   │
+│   ├─ /TrafficBuster.Utils                  (Class Library)
+│   │   ├─ CryptoHelper.cs
+│   │   ├─ UrlValidator.cs
+│   │   └─ GeoIpService.cs
+│   │
+│   └─ /TrafficBuster.Tests                  (Unit & Integration)
+│       ├─ CoreTests.cs
+│       └─ ProxyTests.cs
+│
+├─ /installer
+│   └─ TrafficBusterInstaller.wxs (or Inno setup script)
+└─ README.md
+```
+
+---
+
+## 13) Build & Deployment (VS2022, .NET Framework 4.8)
+
+1. Open `TrafficBuster.sln` in Visual Studio 2022.
+2. Restore NuGet packages.
+3. Configure `TrafficBuster.UI` as startup project.
+4. Build solution (Release).
+5. Create installer using WiX / Visual Studio Installer (include .NET 4.8 prerequisite).
+6. Sign executable and installer if perlu.
+
+---
+
+## 14) Checklist untuk engine AI coder (deliverables yang diperlukan supaya generator kode bisa produksi sempurna)
+
+* Implement `TrafficBuster.Core` (models + scheduler + worker) — required first.
+* Implement `TrafficBuster.Proxy` with ability import, parse, single-run test, encrypt credentials.
+* Implement `TrafficBuster.Platform` (generator, UA builder).
+* Implement `IRenderer` + `HttpSimulatorRenderer`.
+* Implement UI skeleton (WPF) per-tab with ViewModels that call services via DI (use `Microsoft.Extensions.DependencyInjection` or own IoC).
+* Implement `RunController` to orchestrate start/pause/resume/stop and eventing.
+* Add logging & audit (`Serilog`/`NLog`).
+* Add persistence (project save/load .tbconfig and sqlite for history).
+* Add unit & integration tests as specified.
+
+---
+
+## 15) Edge Cases & Robustness Measures
+
+* **Proxy failure hot-swap**: if proxy fails before or during flow, policy decides retry/switch/skip.
+* **Target site blocking**: implement exponential backoff + jitter; detect HTTP 403/429 and react accordingly.
+* **Resource exhaustion**: engine monitors CPU & memory; if above threshold, reduce concurrency automatically (throttle).
+* **Data corruption**: atomic saves (temp file → move) and backup.
+
+---
+
+## 16) Acceptance & QA Checklist before production run
+
+* [ ] All tabs implement APIs and ViewModels, no direct cross-tab calls (use services).
+* [ ] ProxyManager test completes for sample 100 proxies within acceptable time.
+* [ ] Flow generator creates correct number of flows per settings (unit test).
+* [ ] Dry-run produces logs but obeys SafeMode (no external ad clicks).
+* [ ] InstanceCount concurrency verified on sample runs (integration test).
+* [ ] Logging & export verified (CSV/JSON).
+* [ ] Installer builds and passes basic install/uninstall.
+
+---
+
+## 17) Rekomendasi tambahan (agar benar-benar work)
+
+1. **Start with HTTP-simulator only**: memungkinkan kamu menskalakan ke puluhan ribu flow sebelum menambahkan headless rendering.
+2. **Implement throttling & self-adaptive concurrency**: engine menyesuaikan InstanceCount jika server lokal mulai overload.
+3. **Provide sample test server** (local docker web app) untuk integrasi & performance tests.
+4. **Telemetry opt-in** untuk memperbaiki bug di produksi (anonymized).
+5. **Document data contracts** (JSON schema) untuk konfigurasi agar engine AI coding bisa langsung generate DTOs.
+
+---

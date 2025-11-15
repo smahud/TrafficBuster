@@ -1,0 +1,259 @@
+# TrafficBuster — Spesifikasi Final (Super Detail, Semua Bab dan Subbab)
+
+***
+
+## **DAFTAR ISI**
+
+1. Ringkasan & Tujuan
+2. Keunggulan VS Tools Lain & Value Unique
+3. Struktur Modular: Tab Perfungsi
+4. Diagram Arsitektur & Workflow End-to-End
+5. Perincian Bab & Subbab Setiap Tab
+    - General
+    - GeoLocation/Proxy
+    - Platform Fingerprint
+    - Settings
+    - Run/Monitoring
+6. Data Model (C#/TS JSON, DTO, Schema)
+7. Workflow Detail, Anti-tumpang tindih
+8. API REST/WebSocket, Backend Node.js
+9. Kontrak Interface, EventBus, Patterns (MVC/MVVM, IoC)
+10. Checklist AI Coder (Deliverables)
+11. Edge Case & Robustness Exception Handling
+12. Testing, Acceptance Criteria, Metrics
+13. Security, Consent, Audit
+14. Folder Structure & Deployment
+15. Roadmap Bertahap (Phase 0–4)
+16. Hardware Spec & Scaling Guide
+17. Catatan Implementasi & Rekomendasi Library
+
+***
+
+### 1. **Ringkasan & Tujuan Project**
+
+TrafficBuster adalah aplikasi simulasi trafik website, berbasis Windows WPF .NET dan backend Node.js Playwright, yang secara modular dapat menggandakan ribuan simulasi kunjungan, perilaku manusia, tes performa, audit SEO, UX, keamanan, proxy rotation, serta export data analisa siap AI dan pengujian produksi. Cocok untuk dev, devops, dan QA.[1][2][3]
+
+***
+
+### 2. **Keunggulan TrafficBuster**
+
+- Simulasi manusia (scroll, klik, dwell, bounce, interaction, multi-platform, fingerprint unik).
+- Import URL massal semua format (.txt, .csv, .xlsx, .docx).
+- Proxy list rotasi, tes kecepatan, geo-detect, DNS custom.
+- Platform profile OS/Device/Browser kombinasi random/realistis.
+- Modular, per-tab, concurrency, worker pool, session, task scheduler.
+- Export log CSV, JSON, audit otomatis, Safe Mode.
+- Backend Node.js Playwright, scaling REST-WebSocket, remote server, API key, TLS, audit trail.
+- Configurable JSON/YAML, SQLite untuk history dan log.
+- Checklist AI coder: semua bab, API, pola, dan DTO tersedia.
+
+***
+
+### 3. **Struktur Modular, Tab–Tab**
+
+| Tab           | Fungsi | Sub-bab Kunci |
+|---------------|--------|---------------|
+| General       | Target Management, Import, Traffic Type | Input, Import, Fetch, Table, Edit, Save |
+| GeoLocation   | Proxy + DNS + Country Management | Proxy Table, Testing, DNS, Disable/Enable Bypass for localhost or private network or spesific IP address,, Switch, Status |
+| Platform      | Profile Device, Browser, UA Generation | Device, OS, Version, Browser, Resolution |
+| Settings      | Instances, Delay, Policy, Node API | Runtime, Policy, SafeMode, Concurrency |
+| Run/Monitor   | Start, Pause, Resume, Log, Export, Progress | Status, Log, Export, Realtime, Metrics |
+
+***
+
+### 4. **Diagram Arsitektur & End-to-End Flow**
+
+```mermaid
+flowchart TD
+    UI[WPF .NET TrafficBuster.UI] --REST/WebSocket--> BE[Node.js Playwright Engine]
+    UI --> TabGeneral
+    UI --> TabGeoLocation
+    UI --> TabPlatform
+    UI --> TabSettings
+    UI --> TabRun
+    BE --> ProjectManager
+    BE --> FlowWorker
+    BE --> PlaywrightEngine
+    BE --> ProxyManager
+    BE --> AuditLogger
+    BE --> MetricsCollector
+    BE --> ConfigPersistence
+```
+
+***
+
+### 5. **Perincian Bab & Subbab Setiap Tab**
+
+#### **Tab General [Target URL & Traffic Source]**
+- Import, edit, fetch file (.txt, .csv, .docx, .xlsx)
+- Validasi regex
+- Setting mass traffic type: Direct, Organic, Referral, Random
+- Organic Traffic: Search Engine & Keyword Table
+- Referral: Source dropdown + Custom
+- Table: URL, type, source, keywords, edit inline
+
+#### **Tab GeoLocation [Proxy, DNS, Country]**
+- Input proxy (host:port:username:password)
+- Import bulk, format smart
+- Table: Proxy list, credentials, test sekali, country by geoip, status, type
+- DNS setting: Proxy DNS, Host DNS, Custom DNS
+- Global Proxy Enable/Disable switch
+- Status: kecepatan, failover, Test proxy sekali
+
+#### **Tab Platform [Device, Browser, Fingerprinting]**
+- List/Template: OSDevice, Version, Browser, Resolution
+- Droplist & Randomizer
+- Otomatis UA builder
+- Tabel: PlatformProfile
+
+#### **Tab Settings [Runtime, Policy, Backend API]**
+- Instance count, concurrency, delay, rotation, session, time-based
+- Proxy switching policy: PerFlow, OnceAllPages, TimeBased ms/random
+- Platform switching: single/random/per-page
+- Safe Mode on/off, click policy ratio
+- Backend config: Node API host, port, TLS, API Key, autostart, remote, SSH
+- Preset config: Max Session, Max Bounce, Default, Custom
+
+#### **Tab Run/Monitoring [Execution, Log, Export]**
+- Start, dry-run/full, pause/resume/stop
+- Live log: progress bar, status per flow, per-instance detail
+- Export: CSV, JSON, PDF, auto save
+- Metrics: CPU, RAM usage, effective flows completed
+- Logging: Audit trail, error handle, consent file, report generation
+
+***
+
+### 6. **Data Model Example (Core Contracts)**
+
+```csharp
+class Project {
+    Guid Id;
+    string Name;
+    List<TargetEntry> Targets;
+    List<PlatformProfile> Platforms;
+    List<ProxyEntry> Proxies;
+    ProjectSettings Settings;
+    ConsentRecord Consent;
+}
+```
+- Semua field didokumentasi detail pada, siap JSON Schema untuk AI dan DTO generation.[2][3]
+
+***
+
+### 7. **Workflow Detail & Non-Overlapping Execution**
+
+- Tidak ada tumpang tindih antar tab/fungsi. Setiap import/setting/tes proxy hanya tercatat sekali, tidak mengulang cycling/proxy sebelum run engine.
+- Worker Pool, task scheduler, concurrency InstanceCount, semaphores, atomic data save.
+- Implement multi-instance, failover, retry/backoff, autoscale throttling.
+- Export log dan config selalu via API, tidak lokal-stateless.
+
+***
+
+### 8. **API REST/WebSocket Backend Node.js**
+
+- REST: /api/v1/project/load, /run/start, /run/stop, /run/status
+- WebSocket streaming: log, status update
+- Secure API Key, TLS setup, rate limit
+- Validasi JSON payload, consent logic, endpoint segregasi dry-run vs real-run
+
+***
+
+### 9. **Kontrak Interface, EventBus, MVC/MVVM Patterns**
+
+- Semua tab modul terpisah, expose minimal API surface
+- Event-driven model, observer pattern, service interface dijelaskan[3][2]
+- Dependency Injection DI, Unit testing per modul
+
+***
+
+### 10. **Checklist AI Coder (Deliverables)**
+- Semua bab dan subbab tersedia—model, API, test, pattern, config, consent docs, DTO, deployment script
+- Python/TypeScript/JSON/Markdown/CSV examples
+- Acceptance criteria jelas, include edge-case robustness, fail-safe backup, data corruption protection
+
+***
+
+### 11. **Edge Case & Robustness**
+
+- Proxy failure: hot-swap, retry/backoff/jitter, exponential backoff on site-blocking
+- CPU/memory: autoscale concurrency, reduce parallelism otomatis
+- Logging: audit, obfuscated data
+- Data corrupt recovery: atomic save/backup temp, restore safe
+- Consent & SafeMode: klik eksternal require signed consent & log
+
+***
+
+### 12. **Testing, Metrics, Performance**
+- Acceptance criteria dan unit test plan lengkap[2][3]
+- Integration & performance testing 10k–100k flows, concurrency 10–50 instances
+- Metrics: RPS, latency, fail/success, error rate per source/proxy/target, click distribution, memory footprint
+
+***
+
+### 13. **Security, Consent, Audit**
+- Proxy encrypted, consent timestamp, API key usage, TLS optional
+- Audit log click, flow, error, export log with PII masking
+- SafeMode: external ad click di-block default, unlock by consent
+
+***
+
+### 14. **Folder Structure & Deployment**
+
+```
+TrafficBuster/
+├── docs/
+│   ├── ui-spec.md
+│   ├── architecture.md
+│   └── testing-plan.md
+├── TrafficBuster.UI/
+│   ├── MainWindow.xaml
+│   ├── Views/
+│   ├── ViewModels/
+├── TrafficBuster.Core/
+│   ├── Models/
+│   ├── Scheduler/
+│   ├── Worker/
+├── TrafficBuster.Proxy/
+├── TrafficBuster.Platform/
+├── TrafficBuster.Renderers/
+├── TrafficBuster.Storage/
+├── TrafficBuster.Tests/
+├── backend-node/
+│   ├── src/
+│   ├── server.js
+│   ├── playwrightEngine.js
+│   ├── auditLogger.js
+│   └── metrics.js
+├── config/
+├── export/
+```
+- VS installer WiX, sign executable
+- Backend Node: npm, pm2, API/TLS config
+
+***
+
+### 15. **Roadmap Bertahap**
+
+- **Phase 0:** Scaffolding Solution Repo, config shared model
+- **Phase 1:** MVP General–Settings, HTTP-simulator, dry-run
+- **Phase 2:** Playwright integration, full device simulation
+- **Phase 3:** Proxy rotation, auditing, export
+- **Phase 4:** Packaging, perf test, installer
+
+***
+
+### 16. **Hardware Spec & Scaling**
+
+- HTTP sim: 8-core/16GB RAM singgle instance 10k flow
+- Playwright: tiap headless browser ~350MB, 20 parallel: 32–64GB RAM
+- Distributed backend, multi-server, server-grade CPU
+
+***
+
+### 17. **Implementasi & Rekomendasi Library**
+
+- .NET: Newtonsoft.Json, Serilog, SQLite, CsvHelper, OpenXml SDK
+- Node: Express, ws, playwright, geoip-lite, proxy-agent, winston, pm2, helmet
+- Test: unit, integration, acceptance sample[3][2]
+
+***

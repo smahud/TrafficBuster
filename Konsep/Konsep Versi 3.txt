@@ -1,0 +1,401 @@
+Versi 3
+# Ringkasan singkat (1 kalimat)
+
+**Traffic Buster** = WPF (.NET) GUI + Node.js backend (Playwright) yang berkomunikasi lewat HTTP + WebSocket (lokal atau remote), didesain modular per-tab, fokus pada simulasi perilaku manusia yang realistis (scroll, dwell, click, form interaction, platform fingerprinting, proxy rotation), aman (SafeMode & consent), dan skalabel.
+
+---
+
+# 1 — Arsitektur high-level (hybrid)
+
+```
+[TrafficBuster.UI (WPF .NET)]  <--HTTP/REST + WebSocket-->  [TrafficEngine Service (Node.js + Playwright)]
+         |                                                       |
+         |-- Config (tbconfig) / Project files (JSON/YAML)         |-- Playwright browser contexts
+         |-- Local DB (SQLite)                                    |-- Proxy connector / geoip / renderer
+         |-- Logger / Audit                                        |-- Flow scheduler & worker pool
+```
+
+* Komunikasi utama: **REST API** untuk perintah (start/stop/config/status) + **WebSocket** untuk *real-time* streaming log/status/progress.
+* Node.js dapat dijalankan **lokal** (default `localhost:PORT`) atau **remote** di server lain (gunakan IP:PORT yang diatur di UI settings).
+* UI berperan sebagai orchestrator & konfigurator, backend menjalankan eksekusi flow (Playwright contexts) dan mengembalikan hasil/log.
+
+---
+
+# 2 — Keputusan teknis utama (rekomendasi)
+
+* UI: **WPF (.NET Framework 4.8)** atau .NET 6/7 WPF jika ingin modern; gunakan MVVM.
+* Backend: **Node.js (LTS)** + **Playwright** (Chromium/Firefox/WebKit). Playwright dipilih karena kemampuan emulasi device, kontrol page event, dan stabilitas.
+* Komunikasi: **REST (Express)** + **WebSocket** (`ws` atau socket.io) pada backend.
+* IPC security: API Key + optional TLS for remote setup.
+* Renderer default: **HTTP-simulator** (backend juga tersedia) for massive scale; **Playwright** used when full-browser fidelity needed.
+* Data format: JSON for all API payloads.
+
+---
+
+# 3 — Pengaturan koneksi backend (UI settings)
+
+Di menu **Settings** tambahkan:
+
+* `Node Backend Host` (default: `localhost`)
+* `Node Backend Port` (default: `5151`)
+* `Use TLS` (checkbox) → if true, UI uses `https://` and secure websocket `wss://`
+* `API Key` (field) → token that UI sends in header `x-api-key` for auth
+* `AutoStartNode` (optional) → if Node service bundled and installed, UI can start local Node process
+* `Run Node Remotely` instructions & sample SSH/pm2 commands in docs
+
+---
+
+# 4 — Modul & tanggung jawab per Tab (CLEAR separation)
+
+> **Prinsip:** setiap tab adalah modul independen (dll/library) di UI dan hanya berkomunikasi ke backend melalui kontrak API. Tidak ada logika eksekusi heavy di UI.
+
+### Tab: General
+
+* Fungsi: input / import / manage target URLs, set traffic type (Direct / Organic / Referral / Random).
+* Import (Fetch URL) support: `.txt, .csv, .docx, .xlsx`.
+* Jika `Organic + Search Engine` → keyword per entry allowed (comma separated) and generator expands into multiple Target entries.
+* Export / Save targets to project file.
+* UI-only validation (URL regex); **no flow creation** here.
+
+### Tab: Geo Location
+
+* Fungsi: proxy list management (import, test ONCE at add/import), DNS options.
+* Actions:
+
+  * Import proxies (formats: `host:port` or `host:port:user:pass`)
+  * Test proxies (parallel) — **only once on add**. Store ping, type, country (geoip).
+  * Toggle Global Proxy Enable/Disable (global switch)
+  * DNS Mode: `Proxy DNS | Host PC DNS | Custom DNS (semicolon separated)`
+* No rotation policy here (rotation lives in Settings).
+
+### Tab: Platform
+
+* Fungsi: build platform fingerprints (OS/Device first), browser, version, screen resolution.
+* Behavior:
+
+  * UI collects (OS/Device → OS Version → Browser → Browser Version → Resolution) and auto-generate UA string.
+  * Provide templates: Desktop, Mobile, Random.
+  * Expose platform list to backend when starting run.
+
+### Tab: Settings
+
+* Fungsi: all runtime global policies & instance control.
+* Key fields:
+
+  * `Instance Count` (concurrent flow workers)
+  * `Session Duration` (constant / variable)
+  * `Platform Switching` modes
+  * `Traffic Delay` (constant / variable)
+  * `Page Traffic` (Total / Average per page)
+  * `Page Selection Order`
+  * `Proxy Switching Policy` (PerFlow, OnceAllPages, TimeBased) + `UseRandomProxy`
+  * `Human Surfing` (auto-scroll, click per 1000 views, idle times, interaction depth)
+  * **Node Backend connection** (Host, Port, UseTLS, API Key)
+  * `Traffic Mode` presets (Default, Max Session, Max Pageviews, etc.)
+* This module persists `ProjectSettings` to config file to be sent to backend.
+
+### Tab: Run
+
+* Fungsi: orchestrate runs via REST calls + show live logs via WebSocket
+* Controls: Start (Dry-run/Full), Pause, Resume, Stop (graceful/force)
+* Display: per-instance status, current URL, proxy used, platform, RPS, progress bar (Vista-style), CPU/memory
+* Export logs & reports
+
+---
+
+# 5 — Kontrak komunikasi (.NET ↔ Node.js)
+
+## REST API (sample endpoints)
+
+Base URL: `http(s)://{host}:{port}/api/v1`
+Header: `x-api-key: <API_KEY>`
+
+### `POST /api/v1/project/load`
+
+* Purpose: upload project config (json) to backend for execution or dry-run
+* Payload: `Project` JSON (see models)
+* Response: `{ projectId: string, status: "loaded" }`
+
+### `POST /api/v1/run/start`
+
+* Purpose: start run
+* Payload:
+
+```json
+{
+  "projectId": "uuid",
+  "dryRun": false
+}
+```
+
+* Response: `{ runId: "uuid", status: "started" }`
+
+### `POST /api/v1/run/stop`
+
+* Payload: `{ runId: "uuid", graceful: true }`
+* Response: `{ runId, status: "stopping" }`
+
+### `POST /api/v1/run/pause` & `POST /api/v1/run/resume`
+
+* Simple control endpoints.
+
+### `GET /api/v1/run/status?runId=...`
+
+* Returns run summary: counts flows started/completed/failed, current active instances, ETA
+
+### `GET /api/v1/proxy/test` (Admin)
+
+* Trigger backend proxy test (but primary tests done on import by UI). Optional.
+
+### WebSocket: `/ws/run/{runId}`
+
+* Real-time push: backend streams `RunEvent` messages:
+
+```json
+{
+  "type": "flowProgress", // or "log", "metric", "error"
+  "timestamp": "2025-11-07T12:34:56Z",
+  "payload": { ... } 
+}
+```
+
+## Data Models (JSON schemas — core excerpts)
+
+### Project (high level)
+
+```json
+{
+  "id": "uuid",
+  "name": "string",
+  "targets": [ { "id":"", "url":"", "trafficType":"Direct|Organic|Referral|Random", "source":"Google|Facebook|Custom", "keywords":[...] } ],
+  "platforms": [ { "id":"", "os":"Windows", "osVersion":"", "browser":"Chrome", "browserVersion":"", "resolution":"1920x1080" } ],
+  "proxies": [ { "id":"", "host":"", "port":8080, "username":"", "passwordEncrypted":"", "enabled":true } ],
+  "settings": { ...ProjectSettings... }
+}
+```
+
+### FlowEvent (sent via WS)
+
+```json
+{
+  "flowId": "uuid",
+  "eventType": "started|pageLoaded|scrolled|clicked|completed|failed",
+  "url": "https://...",
+  "proxy": "host:port",
+  "platformId": "uuid",
+  "details": { "statusCode": 200, "latencyMs": 233 }
+}
+```
+
+---
+
+# 6 — Node.js backend internal components (modules)
+
+* `server.js` — Express app + WebSocket server + auth middleware
+* `projectManager.js` — load/save projects, validate
+* `flowGenerator.js` — creates Flow objects from project config
+* `scheduler.js` — worker pool manager (controls concurrency = InstanceCount)
+* `flowWorker.js` — executes one Flow (uses Playwright or HTTP-simulator)
+* `playwrightEngine.js` — wrapper for Playwright contexts/browsers
+* `proxyManager.js` — optional runtime proxy selection & test
+* `auditLogger.js` — log events to file/DB
+* `metrics.js` — collect RPS, latencies, resource use
+* `security.js` — API key check, optionally TLS config
+* `persistence.js` — write run results to SQLite/JSON
+
+---
+
+# 7 — Playwright usage details (best practices for realism)
+
+* **Contexts**: use one browser context per FlowWorker to isolate cookies/storage/fingerprint.
+* **Device Emulation**: Playwright provides `devices` presets – but we will generate UA and viewport from Platform profile.
+* **Throttling/Jitter**: simulate network conditions optionally (latency/bandwidth) to mimic mobile or poor network.
+* **Human-like interactions**:
+
+  * Use `page.mouse.move()` with variable paths + delays
+  * Simulate `page.keyboard.type()` with natural typing speed for form input
+  * Scroll with variable step size and gaps, include random jitter
+  * Click targets using bounding boxes, avoid always clicking same coordinate
+  * Use `page.waitForTimeout(random(min,max))` for dwell times
+* **Stealth**: consider Playwright’s built-in features and optional stealth plugins to better simulate real browsers (use carefully & ethically)
+
+---
+
+# 8 — Step-by-step PREPARATION checklist (very detailed) — sebelum mulai coding
+
+> Tujuan: semua kebutuhan lingkungan, keputusan, data, dan tooling sudah siap sehingga tim/engine AI bisa generate/compile tanpa blocking.
+
+### A. Keputusan arsitektur
+
+1. Finalize runtime versions:
+
+   * .NET target: **.NET Framework 4.8** (or .NET 6/7 if migrate)
+   * Node.js LTS (e.g., 18.x/20.x)
+   * Playwright version (latest stable)
+2. Decide communication protocol (recommended: REST + WebSocket).
+3. Decide security model (API Key, TLS optional).
+
+### B. Development environment & tooling
+
+4. Install **Visual Studio 2022** (with WPF/.NET desktop workload).
+5. Install **Node.js** (LTS) and **npm**.
+6. Prepare code editors: VS for .NET, VSCode for Node.
+7. Install Playwright CLI: `npm i -D playwright` then `npx playwright install` (Chromium/Firefox/WebKit).
+8. Install required NuGet packages (Newtonsoft.Json, Microsoft.Extensions.DependencyInjection, Serilog/NLog).
+9. Install Node libs: `express`, `ws` or `socket.io`, `playwright`, `winston`, `geoip-lite`, `proxy-agent`, `body-parser`, `helmet`, `basic-auth`/`express-jwt` if using JWT.
+
+### C. Repos & CI
+
+10. Create Git repositories (mono-repo or two repos: `traffic-buster-ui` and `traffic-buster-engine`).
+11. Setup CI pipeline (GitHub Actions / Azure DevOps) to:
+
+    * Node: `npm ci`, `npm test`, `npx playwright install`, run lint
+    * .NET: restore NuGet, build solution, run unit tests
+12. Create branch strategy (main/develop/feature).
+
+### D. Test assets & infra
+
+13. Prepare test target servers:
+
+    * Local lightweight web app (docker) for safe testing (static pages with links/ads)
+    * Staging target that you own (never target third-party ad networks)
+14. Prepare sample dataset:
+
+    * Sample URL lists (`sample_urls.txt`, `sample_urls.csv`)
+    * Proxy list (test proxies you own/control)
+    * Platform templates JSON
+15. Obtain sample proxies or local proxy pool for test (ensure legal & authorized)
+
+### E. Security & legal
+
+16. Draft consent template & implement consent requirement for any click-external mode.
+17. Decide credential encryption method (Windows DPAPI or AES with passphrase).
+18. Prepare documentation for remote Node deployment (firewall, ports, TLS certs).
+
+### F. Monitoring & infra for production (if remote)
+
+19. Choose process manager for Node: `pm2` recommended (auto restart, logs).
+20. Prepare server(s) for backend if remote (VM specs based on expected concurrency).
+21. Plan for browser binaries storage (Playwright browsers installed on server — large disk).
+
+---
+
+# 9 — Development Implementation Plan (step-by-step coding roadmap)
+
+### Phase 0 — scaffolding & infra
+
+1. Create solution & repo structure (UI and Engine).
+2. Add shared JSON schema definitions in both projects (models).
+3. Setup CI pipeline.
+
+### Phase 1 — Core MVP (HTTP-simulator only)
+
+4. Implement `TrafficBuster.Core` (models, scheduler, flow generator) in Node (or minimal version) and matching DTOs in .NET.
+5. UI: implement Tabs skeleton, config save/load, import URL, proxy import UI.
+6. Backend: implement REST endpoints to accept Project config and produce run events (simulate flows via HTTP client).
+7. WebSocket streaming for run logs.
+8. Validate dry-run end-to-end.
+
+### Phase 2 — Playwright integration & fidelity
+
+9. Integrate Playwright module (Node) for realistic interactions.
+10. Implement Playwright-based FlowWorker: context creation, load, scroll, dwell, click.
+11. Extend UI to display per-instance Playwright details.
+12. Add Proxy support into Playwright via `proxy` launch options or `proxy-server` agent.
+
+### Phase 3 — Features & polish
+
+13. Implement SafeMode/EthicsGuard, consent, click external gating.
+14. Implement Proxy rotation strategies and edge-case handling.
+15. Implement auditing storage & export (CSV/JSON/PDF).
+16. Add headless & HTTP renderer selection in settings.
+17. Add packaging & installer scripts (include Node & Playwright browsers if bundling local).
+
+### Phase 4 — Tests, perf & release
+
+18. Unit & integration tests for both sides.
+19. Performance tests (dry-run then full-run on staging).
+20. Final packaging and installer creation.
+
+---
+
+# 10 — Example commands & deployment notes
+
+### To run Node backend locally (dev)
+
+```bash
+cd backend-node
+npm ci
+npx playwright install
+node server.js --port 5151
+# or use pm2 for production:
+pm2 start server.js --name traffic-buster-engine -- --port 5151
+```
+
+### To run UI (dev)
+
+* Open `TrafficBuster.UI.sln` in Visual Studio → set app settings `NodeBackendHost=localhost` `Port=5151` → Run.
+
+### To deploy Node remotely
+
+* Provision server (Linux/Windows), install Node and Playwright dependencies, run `npx playwright install --with-deps` on Linux for headless browsers.
+* Configure firewall to allow `PORT` from allowed IPs only; enable TLS and API Key.
+
+---
+
+# 11 — Security & Operational Controls (must-implement)
+
+* **API Key** required for all REST endpoints.
+* **SafeMode** default ON (blocks external ad clicks).
+* **Consent file**: require user to check & type project name to allow ad clicks; store a signed consent timestamp in project.
+* **Proxy credentials** encrypted at rest using DPAPI or AES with passphrase.
+* **Rate limiting** on backend per-proxy & global to avoid accidental abuse.
+* **Logging**: structured logs, rotation, and export with PII masking.
+* **Audit trail**: each click event stores flowId, timestamp, platform, proxy, and consent flag.
+
+---
+
+# 12 — Metrics & Acceptance criteria (operational)
+
+**Target metrics to verify:**
+
+* Each FlowWorker must run isolated without leaking cookies/storage to others.
+* Playwright flow must reproduce scroll/click patterns within configured distributions.
+* With `InstanceCount = N`, backend runs up to N concurrent Playwright contexts (or HTTP-simulator workers) without crashing (subject to server resource).
+* Dry-run must not perform external ad clicks if SafeMode ON.
+* For `100 pages × 900 target = 90,000 flows` with InstanceCount 20, system should be able to complete given adequate hardware; measure throughput and tune InstanceCount.
+
+---
+
+# 13 — Recommended hardware (rough guide)
+
+* For **HTTP-simulator only**: moderate CPU (8 cores), 16GB RAM.
+* For **Playwright headless per-flow parallelism**: each headless Chromium context uses memory — estimate ~150–350MB per context. For 20 parallel browsers, plan 8–16 cores, 32–64GB RAM. Use server-grade CPUs for high concurrency.
+* Consider distributed backend instances (multiple Node servers) if massive scale needed.
+
+---
+
+# 14 — Folder structure (hybrid)
+
+```
+/traffic-buster/
+├─ /docs/
+├─ /frontend-dotnet/
+│   ├─ TrafficBuster.UI.sln
+│   ├─ /TrafficBuster.UI (WPF)
+│   └─ /TrafficBuster.CoreLib (.NET shared models)
+└─ /backend-node/
+    ├─ package.json
+    ├─ server.js
+    ├─ /src
+    │   ├─ projectManager.js
+    │   ├─ scheduler.js
+    │   ├─ flowWorker.js
+    │   ├─ playwrightEngine.js
+    │   ├─ proxyManager.js
+    │   └─ auditLogger.js
+    └─ /config
+        └─ default_settings.json
+```
+
+---

@@ -1,0 +1,51 @@
+📜 Changelog Backend (Perjalanan ke v10)
+Berikut adalah ringkasan evolusi backend kita dari awal hingga titik stabil v10 saat ini.
+
+Fase 1: Fondasi Awal (Lisensi & Dataset V1)
+Berdasarkan backup percakapan AI.txt.
+
+[SELESAI] Mengimplementasikan lib/licenseMatrix.js untuk mendefinisikan batasan (Free, Premium, Enterprise).
+
+[SELESAI] Mengimplementasikan lib/datasetStore.js awal (awalnya hanya untuk 'targets').
+
+[SELESAI] Membuat API routes/datasets.js untuk alur (start/chunk/finish).
+
+Fase 2: Arsitektur Inti (Auth, Sesi, Multi-Tenancy)
+Berdasarkan To-Do List 12.
+
+[SELESAI] Mengimplementasikan lib/userStore.js dengan penyimpanan file JSON per pengguna dan hashing bcryptjs.
+
+[SELESAI] Mengimplementasikan authMiddleware.js dengan kebijakan single-login (GRACE_PERIOD_MS).
+
+[SELESAI] Mengimplementasikan websocket.js dengan validasi token JWT.
+
+[SELESAI] Membuat routes/admin.js dengan endpoint lengkap untuk Admin Panel (termasuk change-license).
+
+Fase 3: Refactor Engine (Job Manager & Dataset V2)
+Berdasarkan To-Do List 13 & To-Do List 14.
+
+[SELESAI] Memperluas lib/datasetStore.js dan routes/datasets.js untuk mendukung semua 4 tipe data (targets, proxies, platforms, settings).
+
+[SELESAI] Memperbarui /login dan /validate di app.js untuk mengirimkan objek features ke frontend (jembatan UI-Lisensi).
+
+[SELESAI] Me-refactor lib/jobManager.js untuk menggunakan arsitektur referensi dataset (menerima { targetSet: "..." } dari FE, bukan data penuh).
+
+Fase 4: Penggantian Engine (Playwright V1)
+Berdasarkan To-Do List 14.
+
+[SELESAI] Menambahkan playwright dan morgan ke package.json.
+
+[SELESAI] Membuat lib/playwrightEngine.js (mode hybrid lokal/remote) dan lib/flowWorker.js (kerangka V1).
+
+[SELESAI] Mengganti simulator setInterval di lib/jobManager.js dengan panggilan ke playwrightEngine.
+
+[SELESAI] Mengimplementasikan logika V1 di lib/flowWorker.js (menerapkan proxy acak, platform/resolusi acak, scroll, dan dwell time).
+
+Fase 5: Stabilisasi & Fitur V10 (Status Saat Ini)
+[SELESAI] Memperbaiki semua bug kritis (sessionCleaner, websocket.js, app.js, server.js) untuk memastikan startup stabil.
+
+[SELESAI] Memindahkan semua konfigurasi server (Port, Grace Period) ke .env dan db.js.
+
+[SELESAI] Mengimplementasikan "Clean Start" (membersihkan semua sesi saat startup).
+
+[SELESAI] Mengimplementasikan "Scheduler" (API dan logika cron job berbasis file-JSON).

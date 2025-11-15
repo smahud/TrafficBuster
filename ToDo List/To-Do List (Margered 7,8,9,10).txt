@@ -1,0 +1,508 @@
+>>>> To-Do List 7
+
+Sip, saya 100% setuju. Ini adalah langkah yang paling logis.
+
+Permintaan Anda sangat tepat. Kita harus **menghentikan semua pengembangan fitur frontend baru** dan **membangun "jembatan" ke backend terlebih dahulu**.
+
+Analisis Anda mengenai `appState` dan logika `flowDone` (`xxxx`/`yyyyy`) juga sangat akurat.
+
+1.  **Backend Host (Login):** Benar. `backendConfig.host` (Host Server) akan kita ambil dari Form Login (saat mode produksi) dan kita simpan di *root* `appState`, bukan lagi di `settings`.
+2.  **UUID (ID Target):** Benar. Frontend (`js/tab-general.js`) akan men-generate `id: crypto.randomUUID()` saat target ditambahkan. Ini memastikan backend dan frontend menggunakan ID yang sama.
+3.  **Logika `yyyyy` (Target):** Benar. Logika ini harusnya ada di `js/tab-run.js` saat "Start" ditekan. Dan Anda benar, kita harus mengecek jika `target.flowTarget` (nilai yyyyy) *sudah ada* (misalnya dari "Load Server Config"), kita **tidak boleh** menimpanya dengan nilai baru.
+4.  **Logika `xxxx` (Selesai):** Anda benar 100%. `flowDone` (`xxxx`) adalah *state* milik backend. Frontend **tidak boleh** melakukan `target.flowDone++`. Sebaliknya, backend harus menyimpan `flowDone` di databasenya, dan saat *flow* selesai, ia harus mengirim pesan ke frontend (misalnya: `{"type": "flowDoneUpdate", "targetId": "...", "flowDone": 15}`).
+
+Kita akan merombak "To-Do List" kita total untuk memprioritaskan "koneksi" ini terlebih dahulu.
+
+---
+
+### 📋 To-Do List (Finalisasi Revisi 7 - Backend First)
+
+Ini adalah rencana eksekusi baru kita, yang berfokus membangun koneksi backend-frontend.
+
+#### FASE 1: Otentikasi & Koneksi (Prioritas Utama)
+
+Tujuan: Membuat frontend berhasil login ke backend *nyata* (Tugas 28).
+
+* **Tugas 25 (Frontend): Refactor Config State**
+    * Hapus `backendConfig` dari `appState.settings` di `js/app.js`.
+    * Tambahkan `backendHost: DEFAULT_API_HOST` ke *root* `appStateDefault`.
+    * Perbarui `js/tab-profile.js` agar saat login (mode produksi) berhasil, ia menyimpan `host` yang diinput ke `appState.backendHost`.
+    * Hapus `backendConfig.host` dari `tabs/settings.html` dan `js/tab-settings.js`.
+
+* **Tugas 26 (Backend): Implementasi Server & Endpoint Login**
+    * Siapkan server Node.js (Express) minimal dengan `https` (SSL) dan *middleware* JWT.
+    * Implementasikan *endpoint* `POST /api/v1/login`.
+    * Logika: Menerima `username` & `password`. Memvalidasi (bisa *dummy* 3 user dulu). Jika sukses, kirim balik: `{"success": true, "token": "...", "user": {...}}`. Jika gagal, kirim (401): `{"success": false, "message": "Username/Password salah"}`.
+
+* **Tugas 27 (Frontend): Hubungkan Login ke Backend**
+    * Atur `MODE = 'production'` di `js/config.js`.
+    * [cite_start]Buka komentar (`//`) pada logika `fetch()` di `js/auth.js`[cite: 351].
+    * Pastikan `fetch()` tersebut menggunakan `apiHost` (dari `appState.backendHost`) dan secara otomatis menambahkan `https://`.
+    * Pastikan `handleLoginSuccess` menyimpan `token` dan `user` dari respons backend.
+    * Pastikan `handleLoginFail` menampilkan error spesifik dari backend.
+
+---
+
+#### FASE 2: Sinkronisasi State (Konfigurasi & Pekerjaan)
+
+Tujuan: Membuat frontend bisa "Tarik" dan "Simpan" konfigurasi dari/ke backend, dan menyinkronkan status pekerjaan saat login.
+
+* **Tugas 28 (Backend): Endpoint Konfigurasi**
+    * Buat *endpoint* `GET /api/v1/user/config` (yang dilindungi JWT). Logika: Mengambil `appState` (JSON) user dari database dan mengirimkannya.
+    * Buat *endpoint* `POST /api/v1/user/config` (yang dilindungi JWT). Logika: Menerima `appState` (JSON) dari frontend dan menyimpannya ke database.
+
+* **Tugas 29 (Backend): Endpoint Status Pekerjaan**
+    * [cite_start]Buat *endpoint* `GET /api/v1/run/status-all` (yang dilindungi JWT) [cite: 142-146].
+    * Logika: Mengembalikan status pekerjaan *live* user (misal: `{"status": "running", "progressData": {...}}` atau `{"status": "idle"}`).
+
+* **Tugas 30 (Frontend): Hubungkan Sinkronisasi State**
+    * [cite_start]Perbarui `js/app.js`: Ubah `fetchInitialJobStatus()` untuk memanggil `GET /status-all` *nyata* (menggunakan *token* JWT) [cite: 142-146].
+    * [cite_start]Perbarui `js/tab-run.js`: Ubah listener `load-server-config-button` untuk memanggil `GET /config` *nyata* (menggunakan *token* JWT) [cite: 138-141].
+
+---
+
+#### FASE 3: Eksekusi Pekerjaan & Data Real-time
+
+Tujuan: Mengimplementasikan logika `Start`, `Stop`, dan *progress bar* yang terhubung ke backend.
+
+* **Tugas 31 (Frontend): Implementasi UUID & Logika Target (`yyyyy`)**
+    * Perbarui `js/tab-general.js` untuk menambahkan `id: crypto.randomUUID()` saat target (URL) ditambahkan (Tugas 26).
+    * Perbarui `js/tab-general.js` (`renderGeneralTable`) untuk menampilkan `flowDone / flowTarget` (Tugas 27).
+    * Perbarui `js/tab-run.js` (listener `startButton`): Implementasikan logika "yyyyy" (Tugas 27). *Loop* `appState.generalTargets`, *cek jika `target.flowTarget` belum ada (atau 0)*, baru hitung dan tetapkan `flowTarget` (berdasarkan `pageTraffic`).
+
+* **Tugas 32 (Backend): Implementasi `run/start`**
+    * Buat *endpoint* `POST /api/v1/run/start` (dilindungi JWT).
+    * Logika: Menerima payload JSON lengkap (termasuk `generalTargets` dengan UUID dan `flowTarget` (`yyyyy`) yang sudah dihitung frontend).
+    * Menyimpan pekerjaan ini ke database.
+    * Memulai *Worker Pool* (Playwright).
+
+* **Tugas 33 (Backend): Implementasi WebSocket & Logika `xxxx`**
+    * Buat server WebSocket (WSS) yang aman (memerlukan *token* JWT untuk koneksi).
+    * Saat *worker* menyelesaikan *flow* untuk `targetId`:
+        1.  Backend **memperbarui `flowDone` (`xxxx`) di database** (Tugas 27).
+        2.  Backend mengambil `flowDone` terbaru (misal: 15) dan `flowTarget` (misal: 100).
+        3.  Backend **mengirim pesan WSS** ke *channel* `data-update`: `{"type": "flowDoneUpdate", "targetId": "...", "flowDone": 15, "flowTarget": 100}`.
+        4.  Backend mengirim pesan `progressUpdate` reguler (`{"type": "progressUpdate", ...}`).
+
+* **Tugas 34 (Frontend): Hubungkan Listener Data**
+    * [cite_start]Buat *channel* `onDataUpdate` di `preload.js` (Tugas 23) [cite: 147-154].
+    * Di `js/tab-run.js`, `onDataUpdate` akan *mendengarkan* dan memperbarui UI:
+        * Jika `progressUpdate`: Perbarui *progress bar* dan metrik (Tugas 23).
+        * Jika `flowDoneUpdate`: Cari *target* di `appState.generalTargets` berdasarkan `targetId`, perbarui `target.flowDone = 15` dan `target.flowTarget = 100`, lalu panggil `renderGeneralTable()` (Tugas 27).
+
+---
+
+#### FASE 4: Pembersihan Fitur Frontend Sisa
+* (Tugas 9, 11, 13, 18...)
+* Tugas-tugas ini (Presets, Save Log, Scheduler) akan diimplementasikan setelah FASE 3 selesai.
+
+
+
+
+Baik. Kita telah berhasil menyelesaikan seluruh *frontend*.
+
+Anda benar, langkah berikutnya adalah **fokus penuh pada backend** dan memastikan kedua sisi bisa berkomunikasi dengan sempurna. Kita akan menggunakan "To-Do List (Finalisasi Revisi 7)" sebagai acuan utama kita.
+
+Berikut adalah rincian lengkap mengenai **variabel kunci (kontrak API)** yang dibutuhkan backend, serta **To-Do List detail** untuk tim backend (sesuai diskusi kita).
+
+-----
+
+### 1\. Kontrak API: Variabel & Payload JSON
+
+Ini adalah data yang wajib dipahami oleh backend, yang akan diterima dari frontend.
+
+#### A. Data yang Dikirim Frontend ke Backend
+
+**1. Saat Login (Tugas 27)**
+Frontend akan mengirim ini ke `POST /api/v1/login` (via HTTPS):
+
+```json
+{
+  "username": "user_input",
+  "password": "user_input_pass",
+  "host": "user_input_host:port" 
+}
+```
+
+**2. Saat "Start" Ditekan (Tugas 32)**
+Frontend akan mengirim ini ke `POST /api/v1/run/start` (menggunakan Token JWT di *Header*):
+
+```json
+{
+  "generalTargets": [
+    {
+      "url": "https://example.com",
+      "website": "example.com",
+      "type": "Organic",
+      "source": "Google",
+      "keyword": "test",
+      "flowDone": 0,
+      "id": "uuid-string-1", 
+      "flowTarget": 100 
+    }
+  ],
+  "geoProxies": [
+    { "host": "1.2.3.4:8080", "user": "user", "pass": "pass", "protocol": "SOCKS5", "enabled": true }
+  ],
+  "platforms": [
+    { "browser": "Chrome", "browserVersion": "120.0", "os": "Windows", "osVersion": "Windows 11", "resolution": "1920x1080" }
+  ],
+  "schedules": [
+    { "id": "task_123", "name": "Run Harian", "occurrence": "Daily", "startAt": "2025-12-01T10:00" }
+  ],
+  "settings": {
+    "instanceCount": 10,
+    "sessionDuration": { "type": "Variable", "min": 180000, "max": 300000 },
+    "platformSwitch": "Random",
+    "trafficDelay": { "type": "Constant", "value": 1000 },
+    "pageTraffic": { "type": "Total", "value": 100 },
+    "pageOrder": "Random",
+    "dnsConfig": { "type": "Proxy", "custom": "" },
+    "proxySwitch": { "type": "Time", "random": true, "timeValue": 300000 },
+    "humanSurfing": {
+      "autoPageScrolling": true,
+      "autoClickRatio": true,
+      "internalClick": { "enabled": true, "value": 50 },
+      "interactionDepth": 5
+    }
+  }
+}
+```
+
+**Penjelasan Variabel Kunci (Frontend -\> Backend):**
+
+  * **`generalTargets.[id]`**: Ini adalah **UUID** yang di-generate oleh frontend (`js/tab-general.js`). Backend *wajib* menggunakan ID ini saat melaporkan progres "flow done".
+  * **`generalTargets.[flowTarget]`**: Ini adalah nilai **`yyyyy`** (target total) yang sudah dihitung oleh frontend (`js/tab-run.js`). Backend hanya perlu membacanya.
+  * **`geoProxies`**: Frontend sudah memfilternya, jadi backend hanya menerima proxy yang `enabled: true`.
+  * **`settings.instanceCount`**: Jumlah *worker* paralel yang harus dijalankan backend.
+  * **`settings` (lainnya)**: Semua aturan (durasi, jeda, rotasi, klik) yang harus dipatuhi oleh *worker* backend.
+
+#### B. Data yang Dikirim Backend ke Frontend
+
+**1. Respons Login (Tugas 27)**
+Backend harus merespons ke `POST /api/v1/login` dengan:
+
+```json
+{
+  "success": true,
+  "token": "jwt.token.anda.disini",
+  "user": {
+    "username": "premium_user",
+    "email": "pro@example.com",
+    "license": "Premium"
+  }
+}
+```
+
+Atau jika gagal (status 401):
+
+```json
+{
+  "success": false,
+  "message": "Username atau Password salah"
+}
+```
+
+**2. Status Pekerjaan (Tugas 22)**
+Backend harus merespons ke `GET /api/v1/run/status-all` (dipanggil frontend saat login) dengan:
+
+```json
+{
+  "status": "running", 
+  "progressData": {
+    "completed": 750,
+    "total": 10000,
+    "success": 740,
+    "fail": 10
+  }
+}
+```
+
+Atau jika tidak ada pekerjaan: `{"status": "idle"}`.
+
+**3. Pesan WebSocket Real-time (Tugas 23 & 27)**
+Setelah koneksi WebSocket (WSS) dibuat, backend *wajib* mengirim 3 jenis pesan JSON ini ke *channel* `data-update`:
+
+  * **(Untuk Progress Bar & Metrik)**
+    ```json
+    {
+      "type": "progressUpdate",
+      "completed": 751,
+      "total": 10000,
+      "success": 741,
+      "fail": 10
+    }
+    ```
+  * **(Untuk "Flow Done" - Logika `xxxx`)**
+    ```json
+    {
+      "type": "flowDoneUpdate",
+      "targetId": "uuid-string-1", 
+      "flowDone": 15 
+    }
+    ```
+  * **(Untuk Status Pekerjaan)** (Saat pekerjaan selesai atau dihentikan)
+    ```json
+    {
+      "type": "status",
+      "status": "idle"
+    }
+    ```
+
+Backend juga harus mengirim log teks biasa ke *channel* `update-log`.
+
+-----
+
+### 2\. 📋 To-Do List Backend (Detail)
+
+Ini adalah rencana kerja detail untuk tim backend (Node.js) agar sinkron dengan frontend.
+
+#### FASE 1: Otentikasi & Koneksi (Tugas 26-27)
+
+  * [ ] **Setup Server:** Inisialisasi server **Express** dengan `https` (menggunakan sertifikat SSL, misal: OpenSSL *self-signed* untuk development).
+  * [ ] **CORS:** Implementasikan `cors` agar menerima koneksi dari `electron://`.
+  * [ ] **Endpoint Login:** Buat `POST /api/v1/login`.
+  * [ ] **Database User:** Buat logika (bisa *dummy object* dulu) untuk memvalidasi 3 user (Free, Premium, Enterprise).
+  * [ ] **Logika JWT:** Instal `jsonwebtoken`. Saat login berhasil, buat JWT (Token Dinamis) yang berisi `userId` dan `license`.
+  * [ ] **Respons Login:** Kirim respons JSON `{ success: true, token, user }` atau `(401) { success: false, message }`.
+  * [ ] **Middleware Keamanan:** Buat *middleware* yang akan digunakan oleh semua *endpoint* lain untuk memvalidasi `Authorization: Bearer <token>` (JWT) dari *header*.
+
+#### FASE 2: Sinkronisasi State (Tugas 28-30)
+
+  * [ ] **Database Config:** Siapkan database (misal: MongoDB, PostgreSQL, atau file JSON sederhana per user) untuk menyimpan `appState` JSON.
+  * [ ] **Endpoint GET Config:** Buat `GET /api/v1/user/config` (dilindungi JWT). Logika: Baca `userId` dari token, cari `appState` JSON di DB, dan kirimkan.
+  * [ ] **Endpoint POST Config:** Buat `POST /api/v1/user/config` (dilindungi JWT). Logika: Baca `userId` dari token, terima `appState` JSON dari body, dan simpan/timpa di DB.
+  * [ ] **Database Job:** Siapkan *collection/tabel* terpisah untuk melacak **Job Status** (per `userId`).
+  * [ ] **Endpoint GET Status:** Buat `GET /api/v1/run/status-all` (dilindungi JWT). Logika: Baca `userId` dari token, cek DB Job Status, dan kirim `{"status": "...", "progressData": ...}`.
+
+#### FASE 3: Eksekusi Pekerjaan & Data Real-time (Tugas 31-34)
+
+  * [ ] **Endpoint Start:** Buat `POST /api/v1/run/start` (dilindungi JWT).
+  * [ ] **Validasi Backend:** Terapkan validasi wajib (Min \> Max, DNS kosong, dll.). Jangan percayai frontend 100%.
+  * [ ] **Logika Worker:** Buat arsitektur *Worker Pool* (Playwright) yang membaca `instanceCount`.
+  * [ ] **Logika Scheduler:** Buat logika untuk mendistribusikan `generalTargets`, `geoProxies`, dan `platforms` ke *worker-worker* tersebut.
+  * [ ] **Implementasi Settings:** *Worker* harus mematuhi *semua* aturan di `appState.settings` (durasi sesi, jeda trafik, logika klik, dll.).
+  * [ ] **Endpoint Stop:** Buat `POST /api/v1/run/stop` (dilindungi JWT) untuk menghentikan *worker*.
+  * [ ] **Server WebSocket (WSS):** Implementasikan server `wss` (misal: menggunakan library `ws`).
+  * [ ] **Otentikasi WSS:** Paksa koneksi WSS untuk mengirim token JWT sebagai pesan pertama untuk autentikasi. Tautkan koneksi WSS ke `userId`.
+  * [ ] **Logika `flowDone` (`xxxx`):**
+      * Saat *worker* menyelesaikan *flow* untuk `targetId` tertentu, *worker* harus melapor ke server utama.
+      * Server utama **memperbarui `flowDone` di database** (untuk `targetId` tersebut).
+      * Server utama **mengirim pesan WSS** ke `data-update`: `{"type": "flowDoneUpdate", "targetId": "...", "flowDone": <nilai_baru_dari_db>}`.
+  * [ ] **Logika Progress:** Buat *loop* `setInterval` (misal: 1 detik) yang mengagregasi data `completed`, `total`, `success`, `fail` dari semua *worker* aktif, lalu mengirim pesan WSS `progressUpdate`.
+  * [ ] **Logika Log:** Arahkan `stdout` dari *worker* (atau log terstruktur) ke *channel* WSS `update-log`.
+  
+  
+  
+>>>> To-Do List 8
+To-Do List (Tugas 31 & 34):
+
+
+Frontend (Tugas 31 - UUID): Saat URL ditambahkan di js/tab-general.js, generate id: crypto.randomUUID().
+
+
+
+Frontend (Tugas 31 - Logika yyyyy): Saat "Start" diklik di js/tab-run.js, hitung "Target" (flowTarget). Cek dulu if (!target.flowTarget) agar tidak menimpa data yang sudah ada (dari "Load Server Config").
+
+
+
+
+Frontend (Tugas 31 - UI xxxx/yyyyy): Ubah renderGeneralTable di js/tab-general.js untuk menampilkan kolom "Flow Done" sebagai xxxx / yyyyy.
+
+Frontend (Tugas 34 - Logika xxxx): Tambahkan case di onDataUpdate (js/tab-run.js) untuk mendengarkan pesan flowDoneUpdate dari backend. Jika diterima, perbarui target.flowDone (xxxx) di appState dan panggil renderGeneralTable() .
+
+
+>>>> To-Do List 9
+### 📋 To-Do List 9 (Perbaikan & Lanjutan Integrasi)
+
+Berikut adalah rencana eksekusi kita, dimulai dengan perbaikan bug, lalu melanjutkan integrasi backend yang kritis.
+
+#### FASE 2.5: Perbaikan Bug Kritis (Hotfix)
+
+  * **Tugas 35 (Frontend): Perbaiki `ReferenceError` di `tab-settings.js`**
+
+      * **File:** `js/tab-settings.js`
+      * **Masalah:** Variabel `sessionDurationConstantDiv` dan `sessionDurationVariableDiv` tidak dideklarasikan di *module scope*.
+      * **Solusi:** Tambahkan kedua nama variabel tersebut ke deklarasi `let` di atas file.
+
+    **Cari baris ini (sekitar baris 18):**
+
+    ```javascript
+    let sessionDurationRadios, sessionConstantValue, sessionVariableMin, sessionVariableMax;
+    ```
+
+    **Ubah menjadi:**
+
+    ```javascript
+    let sessionDurationRadios, sessionConstantValue, sessionVariableMin, sessionVariableMax, sessionDurationConstantDiv, sessionDurationVariableDiv;
+    ```
+
+Setelah perbaikan ini, Tab Settings seharusnya bisa dimuat tanpa *crash*.
+
+#### FASE 3: Integrasi Backend (Jembatan yang Hilang)
+
+Setelah bug tadi diperbaiki, kita harus menyelesaikan "jembatan" yang hilang antara `main.js` (Electron) dan `server.js` (Backend) sesuai analisis kita sebelumnya.
+
+  * **Tugas 36 (Frontend): Perbaiki Bug Startup Auth**
+
+      * **File:** `js/auth.js`
+      * **Masalah:** Fungsi `initializeAuth()` mencoba `JSON.parse(savedToken)`, padahal `savedToken` adalah *JWT string* (dibuat oleh `server.js`), bukan JSON. Ini menyebabkan kita harus login setiap kali me-restart aplikasi.
+      * **Solusi:** Ubah `initializeAuth()` untuk *memvalidasi* token ke backend (atau setidaknya men-decode-nya), bukan `JSON.parse`.
+          * *(Untuk implementasi cepat/sementara, kita bisa ubah `handleLoginSuccess` agar menyimpan JWT-nya, dan `initializeAuth` mengambil token itu dan mengirimnya ke endpoint baru di backend, misal `GET /api/v1/user/validate` untuk mengambil data user)*.
+
+  * **Tugas 37 (Frontend): Hubungkan `main.js` ke Backend (`run/start`)**
+
+      * **File:** `main.js`
+      * **Masalah:** Saat sinyal `start-traffic` diterima, `main.js` masuk ke mode produksi tapi **tidak melakukan apa-apa** (hanya mencatat log).
+      * **Solusi:**
+        1.  Ubah `ipcMain.on('start-traffic', ...)` agar menjadi `ipcMain.handle(...)` sehingga bisa *async*.
+        2.  Di blok `else` (Mode Produksi), `main.js` harus mengambil `configJson` DAN *token* (yang harus kita kirimkan juga dari `tab-run.js`).
+        3.  `main.js` kemudian harus melakukan `fetch` *nyata* ke `http://<host_dari_config>/api/v1/run/start` menggunakan `POST`, mengirim `configJson` sebagai *body* dan *token* di *header* `Authorization`.
+        4.  (Backend `server.js` belum memiliki endpoint `run/start`, jadi kita juga perlu menambahkannya di Tugas 39).
+
+  * **Tugas 38 (Backend): Implementasi `server.js` (CORS & WSS)**
+
+      * **File:** `server.js`
+      * **Masalah:**
+        1.  `cors()` mungkin tidak mengizinkan koneksi dari `electron://`.
+        2.  Tidak ada implementasi WebSocket (WSS) sama sekali, padahal frontend (di `tab-run.js`) sangat membutuhkannya untuk `flowDoneUpdate` (logika `xxxx`).
+      * **Solusi:**
+        1.  Konfigurasi `cors` secara eksplisit: `app.use(cors({ origin: 'electron://' }));` (atau `*` jika masih bermasalah).
+        2.  Integrasikan library `ws` (WebSocket) ke `server.js`.
+        3.  Buat logika otentikasi WSS (memvalidasi token JWT saat koneksi).
+
+  * **Tugas 39 (Backend): Implementasi Endpoint Eksekusi**
+
+      * **File:** `server.js`
+      * **Masalah:** Endpoint `POST /api/v1/run/start` dan `POST /api/v1/run/stop` (sesuai To-Do List Revisi 7) belum dibuat di `server.js`.
+      * **Solusi:** Buat kedua endpoint tersebut (dilindungi oleh `authenticateJWT`).
+          * `POST /api/v1/run/start`: Menerima `appState`, menyimpannya ke `jobStates`, dan (nanti) memulai *worker pool*.
+          * `POST /api/v1/run/stop`: Menghentikan *worker pool* dan mengatur `jobStates` ke `idle`.
+
+Rencana ini memprioritaskan perbaikan bug agar aplikasi stabil, lalu langsung fokus pada pembangunan "jembatan" yang hilang untuk fungsionalitas inti (Start, Stop, dan data Real-time).
+
+
+>>>> To-Do List 10
+### 📋 To-Do List 10 (Penyempurnaan UI & Backend-Simulasi)
+
+Ini adalah rencana eksekusi final untuk fase ini.
+
+#### FASE 3.5: Peningkatan Umpan Balik (Feedback) & Kenyamanan (UX)
+
+  * [cite\_start]**Tugas 42: Peningkatan Log Status Koneksi** [cite: 425]
+
+      * **Tujuan:** Memberi pengguna umpan balik yang jelas di log UI tentang status koneksi mereka.
+      * **File:** `app.js` (Frontend)
+      * [cite\_start]**Logika:** Di `DOMContentLoaded`, tambahkan `addLog('INFO', \`Status Koneksi Internet: ${navigator.onLine ? 'Online' : 'Offline'}\`);\`[cite: 426].
+      * **File:** `auth.js`
+      * [cite\_start]**Logika:** Di `handleLoginSuccess` dan `initializeAuth` (setelah validasi sukses), tambahkan log: `addLog('SUCCESS', 'Koneksi API (HTTPS) aman telah dibuat.');` [cite: 427-428].
+      * **File:** `socketClient.js`
+      * [cite\_start]**Logika:** (Sudah Selesai) Log `Koneksi WebSocket (WSS) berhasil dibuat`[cite: 428].
+
+  * **Tugas 43: Simpan Kredensial Login (Aman)**
+
+      * [cite\_start]**Tujuan:** Menyimpan `username` dan `host` (bukan password) untuk kenyamanan, sesuai rekomendasi keamanan kita[cite: 429].
+      * **File:** `tab-profile.js`
+      * **Logika (Menyimpan):** Di *listener* `login-button`, *sebelum* `await login(...)`, tambahkan:
+        ```javascript
+        localStorage.setItem('trafficBusterLastLogin', JSON.stringify({ user: user, host: host }));
+        ```
+      * **Logika (Memuat):** Di `initializeProfileTab()` (blok `else`), tambahkan:
+        ```javascript
+        const lastLogin = localStorage.getItem('trafficBusterLastLogin');
+        if (lastLogin) {
+            const creds = JSON.parse(lastLogin);
+            loginUsername.value = creds.user || '';
+            loginHostInput.value = creds.host || appState.backendHost;
+            // loginPassword.value tetap kosong
+        }
+        ```
+
+  * **Tugas 44: Tampilkan Info Detail Pekerjaan (Job Info)**
+
+      * [cite\_start]**Tujuan:** Menampilkan detail *flow* dan *instance* di bawah progress bar[cite: 436].
+      * **File (Frontend):** `run.html`
+      * **Logika:** Tambahkan elemen UI baru di bawah `<div>` progress bar.
+        ```html
+        <div id="job-info-text" class="text-sm text-gray-600 text-center mt-2">Menunggu perintah...</div>
+        ```
+      * **File (Backend):** `app.js` (backend)
+      * [cite\_start]**Logika:** Di `POST /api/v1/run/start`, setelah menghitung `totalTasks` dan `instances`, tambahkan panggilan `sendToUser` [cite: 438-440]:
+        ```javascript
+        const totalTasks = ...
+        const instances = config.settings.instanceCount;
+        sendToUser(userId, { 
+          type: 'jobInfo', 
+          message: `Backend menerima: ${totalTasks} flow akan dijalankan dengan ${instances} instance.`
+        });
+        ```
+      * **File (Frontend):** `tab-run.js`
+      * [cite\_start]**Logika:** Di `handleRealtimeData(data)`, tambahkan *case* `else if` baru [cite: 442-444]:
+        ```javascript
+        } else if (data && data.type === 'jobInfo') {
+          const jobInfoText = document.getElementById('job-info-text');
+          if (jobInfoText) {
+            jobInfoText.textContent = data.message;
+          }
+        }
+        ```
+
+  * **Tugas 45 (Baru): Rombak Kolom "Flow Status" (xxxx/yyyyy | aaa/bbb)**
+
+      * **Tujuan:** Mengganti kolom "Flow Done" dengan "Flow Status" yang lebih detail (Flow/Target | Click/Target) tanpa memakan banyak tempat.
+      * **File (Frontend):** `general.html`
+      * **Logika (HTML):** Ubah header tabel:
+        `<th>Flow Done</th>` -\> `<th class="table-header text-left">Flow Status</th>`
+      * **File (Frontend):** `tab-run.js`
+      * **Logika (Kalkulasi `bbb`):** Di *listener* `startButton`, di dalam *loop* `appState.generalTargets.forEach(target => ...)`:
+          * Tambahkan kalkulasi `clickTarget` (`bbb`) berdasarkan *click ratio*.
+          * (Contoh sederhana): `target.clickTarget = Math.floor(target.flowTarget * (appState.settings.humanSurfing.internalClick.value / 100));`
+      * **File (Frontend):** `tab-general.js`
+      * **Logika (Render):** Di `renderGeneralTable()`, ubah `innerHTML` sel (cell) yang relevan:
+        ```javascript
+        // Ganti sel "Flow Done" lama dengan ini:
+        <td class="table-cell text-gray-600 font-medium">
+          ${target.flowDone || 0}/${target.flowTarget || 'N/A'} | ${target.clickDone || 0}/${target.clickTarget || 'N/A'}
+        </td>
+        ```
+      * **File (Backend):** `app.js` (backend)
+      * **Logika (Simulasi `aaa`):** Di `setInterval` (simulasi `run/start`), tambahkan `sendToUser` baru secara acak:
+        ```javascript
+        // Di dalam setInterval, mirip dengan flowDoneUpdate
+        if (Math.random() < 0.1 && config.generalTargets.length > 0) {
+          const randomTarget = config.generalTargets[Math.floor(Math.random() * config.generalTargets.length)];
+          sendToUser(userId, {
+            type: "clickDoneUpdate",
+            targetId: randomTarget.id,
+            clickDone: Math.floor(Math.random() * (randomTarget.clickTarget || 5)) + 1 // Nilai 'aaa' baru
+          });
+        }
+        ```
+      * **File (Frontend):** `tab-run.js`
+      * **Logika (Penanganan `aaa`):** Di `handleRealtimeData(data)`, tambahkan *case* `else if` baru:
+        ```javascript
+        } else if (data && data.type === 'clickDoneUpdate') {
+          const target = appState.generalTargets.find(t => t.id === data.targetId);
+          if (target) {
+            target.clickDone = data.clickDone;
+            try { renderGeneralTable(); } catch (e) {}
+          }
+        }
+        ```
+
+-----
+
+#### FASE 4: Peringatan & Tugas Masa Depan (Hanya Catatan)
+
+Ini adalah *notice* (catatan) untuk didiskusikan setelah To-Do List 10 selesai, sesuai permintaan Anda.
+
+  * [cite\_start]**Tugas 46 (Notice - Engine):** Mengganti `setInterval` di `app.js` (backend) dengan *worker pool* **Playwright** yang nyata (Tugas Inti Fase 4) [cite: 447-451].
+  * [cite\_start]**Tugas 47 (Notice - Database):** Mengganti *database in-memory* (`userConfigs = {}`, `jobStates = {}`) dengan solusi persisten (misal: SQLite)[cite: 294].
+  * [cite\_start]**Tugas 48 (Notice - Impor File):** Merencanakan dan membangun *engine* impor modular untuk menangani `.docx`, `.xlsx`, dll.[cite: 247, 310].
+  * **Tugas 49 (Notice - Multi-tenancy):** Memastikan arsitektur backend (penyimpanan proxy, config, status) sepenuhnya terisolasi per `userId` untuk keamanan *multi-user*.
+
+-----
+
+Diskusi kita sudah final. Rencana ini mencakup semua poin yang Anda minta.
+
+Apakah Anda ingin saya memulai implementasi **To-Do List 10** (dimulai dengan **Tugas 42**)?

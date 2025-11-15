@@ -1,0 +1,242 @@
+Versi 1
+> *Advanced Website Testing & Traffic Simulation Tool for Web Performance Analysis*
+
+---
+
+## 🧩 **Deskripsi Umum**
+
+**Traffic Buster** adalah aplikasi berbasis **Windows GUI** yang berfungsi sebagai **alat simulasi trafik dan pengujian performa website** secara realistis.
+Aplikasi ini dirancang untuk meniru perilaku pengunjung manusia saat menjelajahi situs web — termasuk mengakses halaman, berinteraksi, menggulir, dan berpindah antar halaman — dalam kondisi dan parameter yang dapat dikustomisasi penuh.
+
+Tujuan utama **Traffic Buster** adalah memberikan **simulasi beban dan perilaku trafik** yang akurat terhadap website milik pengguna sendiri atau proyek web internal, sehingga developer dapat:
+
+* Menguji **stabilitas dan skalabilitas website**,
+* Mengamati **respons server terhadap berbagai pola trafik**,
+* Dan **memvalidasi kinerja sistem caching, SEO, maupun UX**.
+
+Aplikasi ini mengembangkan konsep dari *Tornado Traffic Generator*, dengan penambahan:
+
+* **Antarmuka modern & user-friendly**,
+* **Manajemen proxy yang komprehensif**,
+* **Sistem multi-instance paralel**,
+* **Simulasi perilaku manusia**,
+* **Konfigurasi fleksibel yang bisa disimpan & dimuat ulang**,
+* Serta **arsitektur modular berbasis pattern modern (MVC/MVVM)**.
+
+---
+
+## ⚙️ **Fitur dan Menu Utama**
+
+### **Menu Bar**
+
+* **New Config** – Membuat konfigurasi baru.
+* **Save Config** – Menyimpan pengaturan aktif.
+* **Save As Config** – Simpan dengan nama baru.
+* **Load Config** – Memuat pengaturan tersimpan.
+* **Check Connection** – Tes koneksi internet/server.
+* **Exit** – Keluar dari aplikasi.
+
+---
+
+## 🧭 **1. Tab: General — Target URL & Traffic Source**
+
+Tab ini merupakan pusat pengaturan utama untuk daftar website atau halaman yang akan diuji.
+Di sini pengguna dapat menambahkan, mengelola, atau mengimpor banyak URL sekaligus.
+
+### 🔹 **Komponen Utama**
+
+#### **A. Input Manual**
+
+* **URL (Wajib)**
+* **Traffic Type**:
+
+  * `Direct Traffic`
+  * `Organic Traffic`
+* **Jika memilih Organic**, maka muncul dua opsi tambahan:
+
+  * **Search Engine Source**
+
+    * Dropdown: `Google, Bing, Yahoo, Baidu, DuckDuckGo, Yandex, Ask, Naver`
+    * Field **Keyword** (comma separated)
+  * **Referral Source**
+
+    * Dropdown: `Facebook, X (Twitter), Instagram, YouTube, TikTok, Pinterest, LinkedIn, Reddit, Custom`
+    * Jika memilih *Custom*, muncul field tambahan untuk mengisi URL referer.
+
+#### **B. Fetch URL (Import URL List)**
+
+Fitur **Fetch URL** kini terintegrasi langsung di tab **General**.
+Fungsi ini memungkinkan pengguna untuk mengimpor banyak URL dalam satu waktu dari file eksternal:
+
+* Mendukung format: `.txt`, `.csv`, `.doc`, `.docx`, `.xls`, `.xlsx`
+* Sistem otomatis memvalidasi format URL (harus `http://` atau `https://`)
+* Setelah file dimuat, pengguna dapat:
+
+  * Mengatur **Traffic Type secara massal** (Direct, Organic, Referral)
+  * Atau memilih opsi **Random Traffic Type**
+  * Jika memilih *Random Organic Traffic*, maka sistem membagi secara acak tipe dan sumber trafik, tanpa memerlukan keyword.
+
+#### **C. Daftar URL (List Table)**
+
+| No | URL | Website | Traffic Type | Source | Keyword |
+| -- | --- | ------- | ------------ | ------ | ------- |
+
+Contoh:
+
+* Jika 1 URL dipilih sebagai *Organic - Google* dengan 5 keyword, maka muncul 5 entri berbeda di tabel.
+* Jika diimpor 100 URL dengan opsi *Random Traffic Type*, sistem otomatis membuat variasi sesuai proporsi acak.
+
+---
+
+## 🌍 **2. Tab: Geo Location — Proxy Management**
+
+Tab ini digunakan untuk **mengelola dan menguji daftar proxy** yang akan digunakan oleh Traffic Buster.
+Sistem mendukung **rotating proxy**, **deteksi lokasi otomatis**, serta **DNS konfigurasi kustom**.
+
+### 🔹 **Komponen Utama**
+
+* **Proxy Source:** Input manual atau import dari URL/file teks
+  Format dukungan:
+
+  * `hostname:port`
+  * `hostname:port:username:password`
+
+* **Test Proxy:**
+  Melakukan pengujian kecepatan dan validasi konektivitas untuk seluruh daftar proxy.
+  Hasil uji hanya dilakukan **sekali** saat proxy ditambahkan.
+
+* **Proxy Table:**
+  | No | Proxy | Credential | Speed | Type | Country | Status |
+
+  * **Country**: otomatis ditentukan berdasarkan IP proxy.
+  * **Status**: menunjukkan apakah proxy aktif atau gagal terhubung.
+
+* **DNS Configuration:**
+
+  * `Use Proxy DNS`
+  * `Use Host PC DNS`
+  * `Custom DNS` → bisa diisi manual (misal `8.8.8.8; 1.1.1.1`)
+
+* **Enable / Disable Proxy (Global Switch):**
+  Checkbox utama untuk mengaktifkan atau menonaktifkan seluruh fungsi proxy.
+  Jika nonaktif, aplikasi otomatis menggunakan **Direct Connection** (tanpa proxy).
+
+---
+
+## 💻 **3. Tab: Platform — Device & Browser Simulation**
+
+Tab ini mengatur **identitas platform dan lingkungan perangkat** yang akan disimulasikan oleh Traffic Buster.
+
+### 🔹 **Mode Template:**
+
+* **Desktop Platform**
+* **Mobile Platform**
+* **Random List (Auto Mixed)**
+
+### 🔹 **Manual Entry Form**
+
+1. **OS/Device** → `Windows, macOS, Linux, iOS, Android`
+2. **OS/Device Version** → contoh: `Windows 11`, `Android 15`, `iOS 18`, `Ubuntu 24.04`
+3. **Browser** → `Chrome, Edge, Firefox, Safari, Opera`
+4. **Browser Version** → dropdown otomatis berdasarkan browser
+5. **Screen Resolution** → otomatis menyesuaikan OS/Device, dengan opsi edit manual
+
+> **User-Agent** akan dihasilkan otomatis berdasarkan kombinasi OS/Browser.
+> Tidak perlu diisi manual agar tetap realistis dan konsisten.
+
+#### **Platform Table**
+
+| No | Browser | Browser Version | OS/Device | OS Version | Screen Resolution |
+
+---
+
+## ⚙️ **4. Tab: Setting — Configuration Center**
+
+Tab ini merupakan pusat kendali seluruh parameter simulasi, termasuk performa, rotasi proxy, serta perilaku trafik.
+
+### 🔹 **A. Instance Control**
+
+* **Concurrent Instances** → menentukan berapa *flow* yang berjalan paralel.
+  Contoh: 10 instance berarti 10 simulasi berjalan bersamaan dalam sandbox terpisah, masing-masing mengikuti pengaturan proxy & platform-nya sendiri.
+
+---
+
+### 🔹 **B. Session & Traffic Control**
+
+| Parameter              | Deskripsi                                                   |
+| ---------------------- | ----------------------------------------------------------- |
+| **Session Duration**   | Constant (ms) atau Variable (min–max)                       |
+| **Platform Switching** | Single / Random per page / Time-based                       |
+| **Traffic Delay**      | Constant atau Variable delay antar flow                     |
+| **Page Traffic**       | Total traffic (nilai pasti) atau Average per page (min–max) |
+| **Page Order**         | Sequential (in order) atau Random                           |
+
+---
+
+### 🔹 **C. Proxy Switching Policy**
+
+Karena *Each Flow* dan *Each Page* secara logika identik (satu siklus simulasi), maka opsi disederhanakan menjadi:
+
+* **Each Flow (Per Cycle)** – Setiap siklus kunjungan menggunakan proxy baru.
+* **Once All Page Visited** – Ganti setelah seluruh halaman selesai dikunjungi.
+* **Time-Based (ms)** – Rotasi otomatis berdasarkan waktu acak (min–max).
+* **Random Proxy Selection** – Centang untuk memilih proxy acak dari daftar aktif.
+
+---
+
+### 🔹 **D. Human Surfing Simulation**
+
+| Opsi                       | Deskripsi                                          |
+| -------------------------- | -------------------------------------------------- |
+| **Auto Scroll Page**       | On/Off + interval scroll (ms)                      |
+| **Click Per 1000 Views**   | Jika aktif → isi Internal dan External click ratio |
+| **Bounce Rate Simulation** | Meniru kunjungan cepat (masuk-keluar)              |
+| **Interaction Depth**      | Jumlah interaksi per sesi                          |
+| **Idle Time**              | Waktu diam sebelum action berikutnya               |
+
+---
+
+### 🔹 **E. Traffic Mode Template**
+
+Preset konfigurasi cepat:
+
+* Default
+* Max Session
+* Max Pageviews
+* Max Bounce Rate
+* Min Bounce Rate
+* Max Clicks
+
+---
+
+## 📊 **5. Tab: Run — Execution & Monitoring**
+
+Tab ini menampilkan seluruh aktivitas dan progres simulasi secara real-time.
+
+### 🔹 **Fitur Tampilan:**
+
+* **Live Log Console** (status setiap flow)
+* **Progress Bar** seperti gaya *Windows Vista Copy Progress*
+* **Real-time Info:**
+
+  * Current URL, Proxy, Platform, Source
+  * Active Instance Count
+  * Total Success / Fail
+  * Total Flow Progress & Estimated Time Remaining
+  * CPU & Memory Usage (opsional)
+
+> Tab ini berfungsi juga sebagai *diagnostic center*, tempat pengguna memantau apakah simulasi berjalan sesuai konfigurasi.
+
+---
+
+## 🧠 **Rekomendasi Teknis Tambahan**
+
+1. Gunakan **Thread Pool Executor** atau **Async Task Manager** untuk manajemen multi-instance.
+2. Terapkan **modular MVC/MVVM pattern** agar UI, logic, dan core engine terpisah dengan rapi.
+3. Sediakan **Export Log (CSV/JSON)** dan **Auto Save Log**.
+4. Tambahkan **Safe Mode** untuk menjalankan simulasi tanpa melakukan klik eksternal.
+5. Gunakan **SQLite** untuk menyimpan data proxy, platform, dan konfigurasi.
+6. Implementasikan **retry system** untuk flow gagal, dengan auto backoff.
+7. Tambahkan **task scheduler** untuk menjalankan simulasi otomatis pada waktu tertentu.
+
+---

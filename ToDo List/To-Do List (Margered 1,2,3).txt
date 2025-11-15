@@ -1,0 +1,416 @@
+>>> To-Do List 1
+Job To-Do List: TrafficBuster (Frontend v25+)
+
+Berikut adalah daftar tugas terperinci berdasarkan diskusi final kita untuk menyempurnakan fungsionalitas frontend sebelum kita beralih ke backend.
+
+Tugas 1: Perbaikan Bug Layout (v25 - Mendesak)
+
+Lokasi: Tab Geo Location
+
+Masalah: Text box untuk "Check on custom URL" dan "Bypass for custom IPs/Domains" "lompat" keluar dari kolomnya (terlalu panjang).
+
+Solusi: Hapus class w-full dari elemen <input id="custom-url-input"> dan <textarea id="bypass-custom-list"> di index.html.
+
+Tugas 2: Fitur Baru - Tab Geo Location (UI)
+
+Lokasi: Tab Geo Location, di bawah card form.
+
+Tugas:
+
+Tambahkan Slider "Test Timeout".
+
+Rentang: 100ms hingga 10000ms.
+
+Default: 1000ms.
+
+Tambahkan label yang menunjukkan nilai ms saat ini.
+
+Tugas 3: Rombak Total - Tabel Proxy (UI & Logika)
+
+Lokasi: Tab Geo Location, di content-card kedua.
+
+Tugas (HTML):
+
+Ubah header tabel (<thead>):
+
+Hapus kolom Type.
+
+Tambahkan kolom baru: Protocol.
+
+Kolom Credential tetap.
+
+Kolom Action tetap.
+
+Tugas (Logika & Render):
+
+Ubah fungsi renderProxyTable() di renderer.js.
+
+Isi kolom Protocol akan berasal dari data result.protocol (dari WebSocket).
+
+Isi kolom Credential akan diformat sebagai username:pass (jika ada).
+
+Render kolom Action untuk setiap baris agar berisi:
+
+Toggle On/Off (sebagai radio button [o On / o Off]) unik untuk proxy tersebut.
+
+Tombol Remove.
+
+Tugas (Logika Backend):
+
+Update appState.geoProxies untuk menyimpan status On/Off dari setiap proxy.
+
+Update gatherSettings() untuk hanya mengirim proxy yang statusnya On ke backend saat "Start" ditekan.
+
+Tugas 4: Fitur Baru - Tab General (UI & Logika)
+
+Lokasi: Tab General, di content-card kedua (Target List).
+
+Tugas (HTML):
+
+Tambahkan kolom baru di <thead> tabel: "Flow Done".
+
+Tambahkan tombol baru "Reset Statistik" di sebelah tombol "Clear All".
+
+Tugas (Logika & Render):
+
+Update renderGeneralTable() untuk menambahkan sel (<td>) baru untuk "Flow Done" (default 0).
+
+Tambahkan listener untuk tombol "Reset Statistik" agar me-reset appState.generalTargets[i].flowDone = 0 dan me-render ulang tabel.
+
+(Catatan untuk Backend): Backend akan mengirim update via WebSocket (misal: {"type": "flowDone", "targetId": "..."}) yang akan memicu appState.generalTargets[i].flowDone++ dan me-render ulang tabel secara real-time.
+
+Tugas 5: Perbaikan Fitur - Tab Settings (UI & Logika)
+
+Lokasi: Tab Settings.
+
+Tugas (HTML & Logika):
+
+HAPUS seluruh <div> yang berisi "Idle Time (ms)" dari card "Session duration".
+
+GANTI NAMA label "Interaction Dept (per sesi)" menjadi "Max Deep Interaction Per Flow".
+
+TAMBAHKAN text box (ms) di sebelah radio button "Time based (ms)" di card "Proxy switching" (yang saat ini hilang).
+
+Pastikan appState dan gatherSettings() di renderer.js disesuaikan (hapus idleTime, tambah proxySwitchTimeValue).
+
+Tugas 6: Fitur Baru - Validasi Error (UI)
+
+Lokasi: Tab Run / Global.
+
+Tugas:
+
+Buat sebuah <div> modal error di index.html (awalnya hidden).
+
+Di renderer.js, saat tombol "Start" diklik, lakukan validasi (URL tidak kosong, Platform tidak kosong, dll).
+Jika gagal, jangan alert(). Tampilkan modal error tersebut dan isi dengan daftar errornya.
+
+
+
+
+### Rencana Eksekusi Final (Revisi Terakhir)
+
+#### 1\. Tugas 7: Manajemen Fingerprint (Model Hybrid)
+
+Kita tetap merombak Tab Platform, namun dengan model "Hybrid" (Input Manual Cerdas + Input Random).
+
+  * **1A. Database JSON (Sesuai Permintaan)**
+
+      * Kita akan membuat file `data/fingerprints.json`. Backend dan frontend akan mengacu ke file ini.
+
+  * **1B. Data Realistis (Sesuai Permintaan)**
+
+      * Saya akan mencari data realistis untuk mengisi file JSON tersebut.
+      * Struktur data akan mendukung dropdown berantai dan filter popularitas, contoh:
+        ```json
+        [
+          {
+            "osDevice": "Windows",
+            "osVersion": "Windows 11",
+            "browser": "Chrome",
+            "baseVersion": "120.0",
+            "resolutions": ["1920x1080", "1600x900", "1366x768"],
+            "popularity": "high"
+          },
+          {
+            "osDevice": "iPhone",
+            "osVersion": "iOS 17",
+            "browser": "Safari",
+            "baseVersion": "17.0",
+            "resolutions": ["390x844", "430x932"],
+            "popularity": "high"
+          },
+          {
+            "osDevice": "Android",
+            "osVersion": "Android 14",
+            "browser": "Chrome",
+            "baseVersion": "120.0",
+            "resolutions": ["412x915", "360x740"],
+            "popularity": "medium"
+          }
+        ]
+        ```
+
+  * **1C. Logika UI Baru (Hybrid - Sesuai Kesepakatan)**
+
+    1.  **Input Manual Ditingkatkan:** Kita **mempertahankan** semua dropdown input manual. Namun, `js/tab-platform.js` akan diubah agar dropdown tersebut (OS Version, Browser, Resolution) terisi secara dinamis (cascading) berdasarkan pilihan dropdown sebelumnya, yang datanya diambil dari `data/fingerprints.json`.
+    2.  **Tombol Update Data:** Kita tambahkan tombol `[Update Platform Data]` di `index.html`. Fungsinya akan mem-fetch ulang `data/fingerprints.json` untuk me-refresh data dropdown.
+    3.  **Dropdown Preset DIHAPUS.**
+
+  * **1D. Logika Tombol Random (Sesuai Permintaan)**
+
+    1.  **UI Baru:** Di `index.html` (Tab Platform, Kolom 4), kita ganti dropdown "Preset" dengan:
+          * `<button id="random-platform-button" ...>Input Random Data</button>`
+          * `<label ...>Jumlah:</label>`
+          * `<input type="number" id="random-platform-amount" ... value="10">`
+    2.  **Logika Baru:** Saat tombol `Input Random Data` diklik, `js/tab-platform.js` akan membaca jumlah (misal 10), memfilter `fingerprints.json` untuk data `popularity: "high"`, lalu menambahkan 10 platform populer (dengan resolusi acak dari daftar resolusi yang didukungnya) ke dalam tabel list.
+
+-----
+
+#### 2\. Tugas 8: Manajemen State & Konfigurasi
+
+Kita akan menggabungkan "Auto-Save" dengan fungsionalitas "Import/Export/Reset" yang Anda minta.
+
+  * **2A. Fitur Auto-Save (Inti)**
+
+      * **Logika:** `js/app.js` akan dimodifikasi untuk menggunakan `localStorage`.
+      * **Saat Buka App:** `loadState()` akan dipanggil untuk memuat `localStorage.getItem('trafficBusterState')` ke `appState`.
+      * **Saat Tutup App:** Listener `window.addEventListener('beforeunload', ...)` akan memanggil `saveState()` untuk menyimpan `appState` ke `localStorage`.
+      * Ini memastikan semua data terakhir Anda (URL, proxy, settings) selalu ada saat aplikasi dibuka.
+
+  * **2B. UI Baru di Tab Run (Sesuai Permintaan)**
+
+      * Saya akan menambahkan "Card" baru di `index.html` di Tab "Run", di bawah card "Log settings".
+      * Card ini akan bernama **"Manajemen Konfigurasi"** dan berisi 3 tombol: `Import Config`, `Export Config`, dan `Reset App`.
+
+  * **2C. Fungsi Tombol Baru (Sesuai Permintaan)**
+
+    1.  **`Import Config`:**
+          * Akan memanggil `window.electronAPI.openFile()`.
+          * Membaca file JSON yang dipilih.
+          * Menggabungkan (merge) data JSON itu ke `appState`.
+          * **PENTING:** Memanggil `saveState()` (agar yang di-import jadi *default* baru) dan me-refresh seluruh UI.
+    2.  **`Export Config` (Fungsi "Save As"):**
+          * Tombol ini akan menjalankan fungsi "Save As" atau "Export".
+          * Akan mengambil `appState` saat ini, mengubahnya jadi JSON.
+          * Akan memanggil fungsi **baru** `window.electronAPI.saveFile()` (yang perlu kita tambahkan ke `preload.js` dan `main.js`) untuk membuka dialog "Save As" dan menyimpan file `.json` di lokasi pilihan user.
+    3.  **`Reset App` (Fungsi "Reset Default"):**
+          * Akan menjalankan fungsi "Reset" yang Anda definisikan: mengembalikan *semua* isian ke nilai default.
+          * **Logika:** Saat diklik, tombol ini akan:
+            1.  Menampilkan konfirmasi (`confirm(...)`).
+            2.  Jika OK, memanggil `localStorage.removeItem('trafficBusterState')`.
+            3.  Memanggil `location.reload()`.
+          * Saat aplikasi di-reload, `loadState()` tidak akan menemukan apa-apa dan `appState` akan terisi dengan nilai *default* yang ada di `js/app.js`, persis seperti yang Anda minta.
+
+-----
+
+### 3\. Penambahan API Baru (Penting)
+
+Untuk menjalankan Tugas 8 (Export Config), kita **harus** menambah satu fungsi baru ke `main.js` dan `preload.js`.
+
+  * **Di `main.js` (di dalam `// --- KOMUNIKASI ANTAR PROSES ---`):**
+    ```javascript
+    ipcMain.handle('dialog:saveFile', async (event, fileContent, filters) => {
+      const { canceled, filePath } = await dialog.showSaveDialog({
+        title: 'Simpan Konfigurasi Sebagai',
+        buttonLabel: 'Simpan',
+        filters: filters || [{ name: 'JSON Config', extensions: ['json'] }]
+      });
+      if (canceled || !filePath) {
+        return { success: false, path: null };
+      }
+      try {
+        fs.writeFileSync(filePath, fileContent, 'utf8');
+        return { success: true, path: filePath };
+      } catch (err) {
+        console.error('Gagal menyimpan file:', err);
+        return { success: false, error: err.message };
+      }
+    });
+    ```
+  * **Di `preload.js` (di dalam `contextBridge.exposeInMainWorld`):**
+    ```javascript
+    // ... (di bawah onUpdateLog) ...
+    // Menyimpan file (dengan filter kustom)
+    saveFile: (fileContent, filters) => ipcRenderer.invoke('dialog:saveFile', fileContent, filters)
+    ```
+
+
+
+>>> To-DO List 2
+Tentu. Diskusi ini sangat penting. Anda telah menambahkan dua poin *krusial*:
+
+1.  **Arsitektur HTML Modular**: Anda ingin memecah file `index.html` yang sudah 700 baris menjadi file HTML terpisah per tab.
+2.  **Autentikasi**: Anda ingin menambahkan tab "Profile" untuk *dummy login* (`admin`/`1234567890`) yang bisa berevolusi menjadi autentikasi backend sungguhan, tapi tetap bisa berjalan *tanpa* backend.
+
+Kedua ide ini **sangat bagus**. Ide HTML modular adalah evolusi alami dari apa yang baru saja kita lakukan dengan JavaScript.
+
+Mari kita finalisasi "To-Do List" baru kita. Ini akan menjadi *rencana besar* terakhir kita untuk menyelesaikan seluruh frontend.
+
+---
+
+### 📋 To-Do List Frontend (Finalisasi Revisi 2)
+
+Ini adalah rencana gabungan kita. Kita akan melakukan refactor HTML besar terlebih dahulu, baru menambahkan fitur-fitur baru.
+
+#### **Tugas Prioritas: Refactor HTML Modular (Tugas 16)**
+* **Masalah:** `index.html` terlalu besar (700+ baris).
+* **Tugas:** Kita akan merombak total struktur HTML.
+* **Logika Implementasi:**
+    1.  `index.html` akan diubah menjadi **Shell (Cangkang)**. Isinya hanya akan terdiri dari:
+        * Sidebar navigasi (semua tombol `<a ...>`).
+        * Sidebar footer (yang sekarang akan *kosong*).
+        * Area konten utama (`<main>`) yang kosong.
+        * Modal Error & Script (di bagian bawah).
+    2.  Kita akan membuat folder baru, misalnya `tabs/`.
+    3.  Di dalam `tabs/`, kita akan membuat file HTML terpisah untuk *setiap* tab:
+        * `tabs/general.html`
+        * `tabs/geolocation.html`
+        * `tabs/platform.html`
+        * `tabs/settings.html`
+        * `tabs/run.html`
+    4.  **`js/app.js`** akan diperbarui. Fungsi `showTab(tabId)` akan diubah:
+        * Selain mengganti kelas `tab-active`, ia akan menggunakan `fetch()` untuk mengambil konten dari (contoh) `tabs/general.html`.
+        * Ia akan menyuntikkan HTML tersebut ke dalam `<main class="content-area">`.
+    5.  Semua file `js/tab-*.js` kita akan tetap berfungsi karena ID elemennya (`#url-input`, `#proxy-host`, dll.) sekarang dimuat secara dinamis bersama dengan HTML-nya.
+
+---
+
+#### **Tugas 17: Relokasi Tombol Kontrol Utama (Start/Pause/Stop)**
+* **Masalah:** Tombol "Start" ada di sidebar, tapi logikanya ada di Tab Run.
+* **Tugas:** Pindahkan tombol "Start", "Pause", dan "Stop" dari footer sidebar.
+* **Logika Implementasi:**
+    1.  Selama **Tugas 16**, kita akan memotong HTML untuk ketiga tombol tersebut dari `index.html`.
+    2.  Kita akan menempelkannya ke file `tabs/run.html` yang baru, di bawah card "Start options" (sesuai permintaan Anda).
+    3.  Ini adalah desain yang jauh lebih bersih karena UI dan logikanya (`js/tab-run.js`) kini berada di modul yang sama.
+
+---
+
+#### **Tugas 18: Implementasi Tab "Scheduler"**
+* **Masalah:** Kita perlu UI untuk fitur "Start based on schedule".
+* **Tugas:** Membuat tab "Scheduler" baru yang modular.
+* **Logika Implementasi:**
+    1.  **`index.html`:** Menambahkan item navigasi "Scheduler" baru di sidebar (di atas "Profile").
+    2.  **File Baru:** Membuat `tabs/scheduler.html` (untuk UI) dan `js/tab-scheduler.js` (untuk logika).
+    3.  **`js/app.js`:** Akan meng-import dan menginisialisasi `tab-scheduler.js`.
+    4.  **UI di `tabs/scheduler.html`** (Sesuai permintaan Anda):
+        * Input Teks: `Name` (nama schedule).
+        * Dropdown: `Occurrence` (Once, Every 6hrs, Every 12hrs, Daily, Alternative days, Weekly).
+        * Input Tanggal/Waktu: `Start at` (default hari ini, bisa diedit).
+        * Tombol: `Add Schedule`.
+        * Tabel: `No.`, `Name`, `Occurrence`, `Start Time`.
+    5.  `js/tab-run.js` nantinya akan membaca data dari `appState.schedules` (yang diisi oleh tab ini) jika "Run Scheduler" dipilih.
+
+---
+
+#### **Tugas 19: Implementasi Tab "Profile" (Autentikasi)**
+* **Masalah:** Kita perlu *dummy login* yang siap untuk backend.
+* **Tugas:** Menambahkan tab "Profile" baru (di atas "Run") dan logika *dummy login* yang tidak memblokir.
+* **Logika Implementasi:**
+    1.  **`index.html`:** Menambahkan item navigasi "Profile" baru di sidebar.
+    2.  **File Baru:** Membuat `tabs/profile.html` dan `js/tab-profile.js`.
+    3.  **`js/app.js`:**
+        * Menambahkan `appState.user = null` dan `appState.isAuthenticated = false`.
+        * Saat `loadState()` (dari Auto-Save) berjalan, ia akan mencoba memuat info user.
+        * **Logika Dummy (Hardcode):** Kita akan tambahkan fungsi `dummyLogin(user, pass)` di `js/auth.js` (file baru).
+        * Di `js/app.js`, kita akan *secara otomatis memanggil* `dummyLogin('admin', '1234567890')` saat aplikasi dimuat. Ini akan mengisi `appState.user` dan `appState.isAuthenticated = true`.
+        * Ini memenuhi syarat Anda: "jika belum ada backend maka app ini tetap running dan bisa masuk seperti biasa".
+    4.  **UI di `tabs/profile.html`:**
+        * Menampilkan: "Selamat datang, **admin**".
+        * Form (dummy): "Ubah Password" (Password Lama, Password Baru).
+        * Tombol: "Logout" (akan menghapus `appState.user` dan me-refresh).
+    5.  **Kesiapan Backend (Nanti):** Nanti, kita hanya perlu mengubah `dummyLogin()` di `js/auth.js` menjadi `realLogin()` yang melakukan `fetch()` ke backend Anda.
+
+---
+
+#### **Tugas 9, 10, 11, 13, 14 (Tugas yang Sudah Disepakati)**
+Tugas-tugas ini tetap ada dan akan diimplementasikan *setelah* refactor HTML modular selesai:
+* **Tugas 9:** Implementasi Logika **"Traffic Mode Templates"** (di `js/tab-settings.js`).
+* **Tugas 10:** Implementasi **Metrik Real-Time** (UI di `tabs/run.html`).
+* **Tugas 11:** Implementasi **Tombol Log** (`save-log-button`, `log-auto-save` di `js/tab-run.js`).
+* **Tugas 13:** Implementasi **Koneksi Wajib Aman** (mengubah UI di `tabs/settings.html` dan logika di `main.js`).
+* **Tugas 14:** Implementasi **Listener Data Real-Time** (di `preload.js` dan `js/tab-run.js` untuk `flowDone`, `progress`, dan metrik).
+
+---
+
+### Diskusi Final
+
+Ini adalah rencana yang sangat besar dan mengubah arsitektur HTML kita secara fundamental.
+
+* **Urutan Eksekusi:** Saya sarankan kita lakukan dalam urutan ini:
+    1.  **Tugas 16 (HTML Modular)** + **Tugas 17 (Tombol Start)**: Ini adalah fondasi baru.
+    2.  **Tugas 18 (Scheduler)** + **Tugas 19 (Profile/Auth)**: Menambahkan tab-tab baru.
+    3.  **Tugas 9, 10, 11, 13, 14**: Menambahkan fitur-fitur logis yang tersisa (Presets, Metrics, Logs, Secure, Real-time).
+
+Apakah Anda setuju dengan "To-Do List" (Tugas 9 s/d 19) dan urutan eksekusi ini?
+
+
+>>> To-Do List 3
+Anda benar sekali. Ini adalah perubahan arsitektur yang sangat cerdas.
+
+Ide Anda untuk **"overlay lokal per tab"** jauh lebih elegan daripada *full-screen blocker* yang saya usulkan sebelumnya. Ini memungkinkan pengguna (yang sudah login) untuk bernavigasi, sementara UI dengan jelas menunjukkan tab mana yang terkunci (jika mereka logout).
+
+Saya 100% paham. Mari kita finalisasi *To-Do List* baru kita ("Revisi 3") berdasarkan alur kerja yang jauh lebih baik ini.
+
+---
+
+### 📋 To-Do List Frontend (Finalisasi Revisi 3)
+
+Ini adalah rencana eksekusi baru kita, yang memprioritaskan arsitektur HTML modular dan alur autentikasi baru Anda.
+
+#### **Tugas 16: Refactor HTML Modular (Prioritas 1)**
+* **Masalah:** `index.html` terlalu besar (700+ baris) [cite: 21].
+* **Tugas:** Mengubah `index.html` menjadi "Cangkang" (Shell) dan memindahkan konten setiap tab ke file HTML terpisah di folder `tabs/` (`general.html`, `geolocation.html`, `platform.html`, `settings.html`, `run.html`) [cite: 27-31].
+* **Logika:** `js/app.js` akan di-update untuk mem-`fetch` dan menginjeksi HTML ini secara dinamis saat tab di-klik [cite: 32-35].
+
+#### **Tugas 17: Relokasi Tombol Kontrol (Prioritas 2)**
+* **Masalah:** Tombol Start/Pause/Stop secara logis milik Tab "Run".
+* **Tugas:** Memindahkan tombol-tombol ini dari footer sidebar `index.html` [cite: 44] ke dalam file `tabs/run.html` (di bawah card "Start options") [cite: 46, user]. Ini akan dilakukan *selama* Tugas 16.
+
+#### **Tugas 18: Implementasi Tab "Scheduler" (Prioritas 3)**
+* **Masalah:** Kita perlu UI untuk fitur "Start based on schedule".
+* **Tugas:** Membuat tab "Scheduler" baru yang modular [cite: 50, user].
+* **Logika:**
+    1.  Menambahkan navigasi "Scheduler" ke sidebar `index.html` [cite: 53].
+    2.  Membuat file UI baru `tabs/scheduler.html` (berisi form: Name, Occurrence, Start at, dan Tabel) [cite: 56-59, user].
+    3.  Membuat file logika baru `js/tab-scheduler.js`.
+    4.  Memperbarui `js/app.js` untuk menginisialisasi tab baru ini [cite: 55].
+
+#### **Tugas 19 (Revisi): Implementasi Autentikasi "Per-Tab" (Prioritas 4)**
+* **Masalah:** Kita perlu alur login yang *interaktif* tapi *dummy*, yang siap untuk backend [cite: user].
+* **Tugas:** Mengimplementasikan "Login per-Tab" dan Tab "Profile" yang dinamis.
+* **Logika Implementasi:**
+    1.  **File Baru:** Buat `js/auth.js`. File ini akan berisi 3 *dummy users* (Free, Premium, Enterprise) [cite: user] dan fungsi `login(user, pass)`, `logout()`, `checkAuth()`.
+    2.  **File Baru:** Buat `tabs/profile.html`. File ini akan berisi **dua tampilan (state)**:
+        * *State Logged Out:* Form login (Username, Password, Tombol Login) [cite: user].
+        * *State Logged In:* Info profil (Foto dummy, Email, Status Lisensi), form "Ubah Password", dan tombol "Logout" [cite: user].
+    3.  **UI Baru (Overlay):** Kita akan mendesain satu `div` "overlay" (blur + pesan "Silahkan login") [cite: user]. HTML untuk overlay ini akan kita tambahkan di **setiap file tab** (kecuali `profile.html`).
+    4.  **Logika `js/app.js`:**
+        * `appState` akan memiliki `isAuthenticated = false` dan `user = null` sebagai default.
+        * Fungsi `showTab(tabId)` akan diubah:
+            * Ia akan memuat HTML tab (misal: `tabs/general.html`).
+            * *Setelah* HTML dimuat, ia akan memanggil `auth.checkAuth()`.
+            * Jika `isAuthenticated` adalah `false`:
+                * Jika `tabId === 'profile'`, ia akan memanggil `initializeProfileTab()` (yang akan menampilkan form login).
+                * Jika `tabId !== 'profile'`, ia akan **menampilkan overlay** di tab tersebut [cite: user].
+            * Jika `isAuthenticated` adalah `true`, ia akan memanggil inisialisasi tab seperti biasa.
+    5.  **Logika Logout:** Tombol "Logout" di `tabs/profile.html` akan memanggil `auth.logout()`, yang akan menghapus token dari `localStorage` dan me-reload aplikasi (mengembalikan ke kondisi "terkunci") [cite: user].
+
+#### **Tugas 20 (Sebelumnya 9, 10, 11, 13, 14): Implementasi Fitur Logis Sisa**
+Ini adalah paket tugas terakhir untuk menyelesaikan fungsionalitas, *setelah* UI/Auth/Scheduler selesai.
+* **Tugas 20A (Preset):** Mengaktifkan logika "Traffic Mode Templates" (Tugas 9) [cite: 109].
+* **Tugas 20B (Metrik):** Menambahkan UI "Total Success/Fail/ETA" (Tugas 10) [cite: 110] ke `tabs/run.html`.
+* **Tugas 20C (Log):** Menambahkan listener untuk "Save Log" dan "Auto-save saat Stop" (Tugas 11) [cite: 111].
+* **Tugas 20D (Koneksi):** Mengubah UI `backend-host` di `tabs/settings.html` agar tidak meminta `http://` (Tugas 13) [cite: 112].
+* **Tugas 20E (Data):** Membuat *channel* data baru (`onDataUpdate`) di `preload.js` untuk menerima JSON (Tugas 14) [cite: 113].
+
+---
+
+### Diskusi
+
+To-Do List baru ini (Tugas 16 s/d 20) secara akurat mencerminkan alur kerja baru Anda:
+1.  Refactor HTML Modular (Tugas 16+17).
+2.  Implementasi Auth "Per-Tab" (Tugas 19).
+3.  Implementasi Tab Scheduler (Tugas 18).
+4.  Implementasi Fitur Logis Sisa (Tugas 20).
+
+Apakah Anda setuju dengan urutan baru yang memprioritaskan Refactor HTML dan Autentikasi "Per-Tab" ini?
