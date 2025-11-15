@@ -1,0 +1,16 @@
+{
+  "name": "traffic-buster-frontend",
+  "productName": "traffic-buster-frontend",
+  "description": "My Electron application description",
+  "keywords": [],
+  "main": "./main.js",
+  "version": "1.0.0",
+  "author": "Administrator",
+  "scripts": {
+    "start": "electron ."
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "electron": "39.0.0"
+  }
+}

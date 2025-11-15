@@ -1,0 +1,89 @@
+<div class="content-wrapper">
+  <h2 class="content-title">Platform</h2>
+  
+  <div class="content-card relative" style="min-height: 250px;">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
+      
+      <div class="md:col-span-2 space-y-2">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <div>
+            <label for="platform-os" class="form-label">OS/Device</label>
+            <select id="platform-os" class="form-select">
+              <option value="">-- Muat Data --</option>
+            </select>
+          </div>
+          <div>
+            <label for="platform-os-version" class="form-label">OS Version</label>
+            <select id="platform-os-version" class="form-select" disabled>
+              <option value="">--</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <div>
+            <label for="platform-browser" class="form-label">Browser</label>
+            <select id="platform-browser" class="form-select" disabled>
+              <option value="">--</option>
+            </select>
+          </div>
+          <div>
+            <label for="platform-browser-version" class="form-label">Browser Version</label>
+            <select id="platform-browser-version" class="form-select" disabled>
+              <option value="">--</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label for="platform-resolution" class="form-label">Screen Resolution</label>
+          <select id="platform-resolution" class="form-select" disabled>
+            <option value="">--</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="space-y-2">
+        <h3 class="card-subtitle">Random Platform</h3>
+        <div>
+          <input type="number" id="random-platform-amount" class="form-input" value="10" min="1" placeholder="Jumlah">
+        </div>
+        <button id="random-platform-button" class="btn btn-primary w-full">Input Random Data</button>
+        <p class="text-xs text-gray-500">Akan meng-input data populer (popularity: high) secara acak.</p>
+      </div>
+
+      <div class="space-y-2">
+        <h3 class="card-subtitle">Manajemen Data</h3>
+        <button id="update-platform-db" class="btn btn-secondary w-full">Update Platform Data</button>
+        <p id="platform-db-status" class="text-xs text-gray-500 h-4">Klik untuk memuat data...</p>
+      </div>
+
+    </div>
+    
+    <div class="absolute bottom-2 left-2">
+      <button id="add-platform-button" class="btn btn-primary w-28">Add</button>
+    </div>
+  </div>
+
+  <div class="content-card">
+    <div class="flex justify-between items-center mb-2">
+      <h3 class="card-title">Platform List</h3>
+      <button id="clear-platform-button" class="btn btn-secondary">Clear Platforms</button>
+    </div>
+    <div class="table-scroll-wrapper">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50 sticky top-0">
+          <tr>
+            <th class="table-header text-left">#</th>
+            <th class="table-header text-left">Web Browser</th>
+            <th class="table-header text-left">Browser version</th>
+            <th class="table-header text-left">OS/Device</th>
+            <th class="table-header text-left">OS Version</th>
+            <th class="table-header text-left">Screen Res</th>
+            <th class="table-header text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="platform-table-body" class="bg-white divide-y divide-gray-200">
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

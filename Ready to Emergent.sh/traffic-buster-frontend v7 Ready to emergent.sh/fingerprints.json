@@ -1,0 +1,112 @@
+[
+  {
+    "id": "win11_chrome_high",
+    "osDevice": "Windows",
+    "osVersion": "Windows 11",
+    "browser": "Chrome",
+    "baseVersion": "120.0",
+    "resolutions": ["1920x1080", "1536x864", "1366x768", "2560x1440"],
+    "popularity": "high",
+    "type": "Desktop"
+  },
+  {
+    "id": "win10_chrome_high",
+    "osDevice": "Windows",
+    "osVersion": "Windows 10",
+    "browser": "Chrome",
+    "baseVersion": "120.0",
+    "resolutions": ["1920x1080", "1366x768", "1536x864"],
+    "popularity": "high",
+    "type": "Desktop"
+  },
+  {
+    "id": "win11_edge_med",
+    "osDevice": "Windows",
+    "osVersion": "Windows 11",
+    "browser": "Edge",
+    "baseVersion": "120.0",
+    "resolutions": ["1920x1080", "1536x864"],
+    "popularity": "medium",
+    "type": "Desktop"
+  },
+  {
+    "id": "mac_safari_med",
+    "osDevice": "macOS",
+    "osVersion": "macOS Sonoma",
+    "browser": "Safari",
+    "baseVersion": "17.0",
+    "resolutions": ["1440x900", "1728x1117", "2560x1600"],
+    "popularity": "medium",
+    "type": "Desktop"
+  },
+  {
+    "id": "win10_firefox_low",
+    "osDevice": "Windows",
+    "osVersion": "Windows 10",
+    "browser": "Firefox",
+    "baseVersion": "119.0",
+    "resolutions": ["1920x1080", "1366x768"],
+    "popularity": "low",
+    "type": "Desktop"
+  },
+  {
+    "id": "linux_firefox_low",
+    "osDevice": "Linux",
+    "osVersion": "Ubuntu",
+    "browser": "Firefox",
+    "baseVersion": "119.0",
+    "resolutions": ["1920x1080", "1366x768"],
+    "popularity": "low",
+    "type": "Desktop"
+  },
+  {
+    "id": "iphone_safari_high",
+    "osDevice": "iPhone",
+    "osVersion": "iOS 17",
+    "browser": "Safari",
+    "baseVersion": "17.0",
+    "resolutions": ["390x844", "414x896", "375x812"],
+    "popularity": "high",
+    "type": "Mobile"
+  },
+  {
+    "id": "android_chrome_high",
+    "osDevice": "Android",
+    "osVersion": "Android 14",
+    "browser": "Chrome",
+    "baseVersion": "120.0",
+    "resolutions": ["360x800", "393x873", "412x915"],
+    "popularity": "high",
+    "type": "Mobile"
+  },
+  {
+    "id": "android_samsung_med",
+    "osDevice": "Android",
+    "osVersion": "Android 14",
+    "browser": "Samsung Internet",
+    "baseVersion": "23.0",
+    "resolutions": ["360x800", "412x915"],
+    "popularity": "medium",
+    "type": "Mobile"
+  },
+  {
+    "id": "iphone_16pro_flagship",
+    "osDevice": "iPhone",
+    "osVersion": "iOS 18",
+    "browser": "Safari",
+    "baseVersion": "18.0",
+    "resolutions": ["440x956"],
+    "popularity": "high",
+    "type": "Mobile"
+  },
+  {
+    "id": "samsung_s24u_flagship",
+    "osDevice": "Android",
+    "osVersion": "Android 14",
+    "browser": "Chrome",
+    "baseVersion": "120.0",
+    "resolutions": ["384x824"],
+    "popularity": "high",
+    "type": "Mobile"
+  }
+]

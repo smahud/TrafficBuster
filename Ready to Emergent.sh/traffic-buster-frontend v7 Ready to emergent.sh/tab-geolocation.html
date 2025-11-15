@@ -1,0 +1,100 @@
+<div class="content-wrapper">
+  <h2 class="content-title">Geo Location</h2>
+
+  <div class="content-card" style="min-height: 310px;">
+    <div class="mb-2">
+      <label for="proxy-file-input" class="form-label">Proxy source (URL/Text file)</label>
+      <div class="flex">
+        <input type="text" id="proxy-file-input" class="form-input rounded-r-none" placeholder="Klik ... untuk import" readonly>
+        <button id="import-proxy-file-button" class="btn btn-icon rounded-l-none">...</button>
+      </div>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+      <div class="space-y-2 border-r border-gray-200 pr-2">
+        <h3 class="card-subtitle">Add proxy one by one</h3>
+        <div>
+          <label for="proxy-host" class="form-label">Proxy (host:port)</label>
+          <input type="text" id="proxy-host" class="form-input" placeholder="1.2.3.4:8080">
+        </div>
+        <div>
+          <label for="proxy-user" class="form-label">Username</label>
+          <input type="text" id="proxy-user" class="form-input">
+        </div>
+        <div>
+          <label for="proxy-pass" class="form-label">Password</label>
+          <input type="password" id="proxy-pass" class="form-input">
+        </div>
+        <button id="add-proxy-button" class="btn btn-primary mt-1">Add Proxy</button>
+      </div>
+      <div class="space-y-2 border-r border-gray-200 pr-2">
+        <h3 class="card-subtitle">Enable Proxy</h3>
+        <label class="form-checkbox-label">
+          <input type="checkbox" id="enable-proxy-checkbox" class="form-checkbox" checked>
+          <span>Enable Proxy (Global Switch)</span>
+        </label>
+        <h3 class="card-subtitle mt-2">Proxy add options</h3>
+        <label class="form-checkbox-label">
+          <input type="checkbox" id="test-proxy-before-add-checkbox" class="form-checkbox">
+          <span>Test Proxy Before Add</span>
+        </label>
+        <label class="form-checkbox-label mt-1">
+          <input type="checkbox" id="default-check-checkbox" class="form-checkbox" checked>
+          <span>Default check</span>
+        </label>
+        <label class="form-checkbox-label">
+          <input type="checkbox" id="custom-url-checkbox" class="form-checkbox">
+          <span>Check on custom URL</span>
+        </label>
+        <div>
+          <input type="text" id="custom-url-input" class="form-input" placeholder="google.com">
+        </div>
+        <div class="mt-2">
+          <label for="test-timeout-slider" class="form-label">Test Timeout (<span id="test-timeout-label">1000</span>ms)</label>
+          <input type="range" id="test-timeout-slider" min="100" max="10000" value="1000" step="100" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+        </div>
+      </div>
+      <div class="space-y-2">
+        <h3 class="card-subtitle">Proxy Bypass</h3>
+        <p class="text-xs text-gray-500 -mt-1 mb-1">Kecualikan alamat agar tidak memakai proxy.</p>
+        <label class="form-checkbox-label">
+          <input type="checkbox" id="bypass-localhost" class="form-checkbox" checked>
+          <span>Bypass for localhost</span>
+        </label>
+        <label class="form-checkbox-label mt-1">
+          <input type="checkbox" id="bypass-custom" class="form-checkbox">
+          <span>Bypass for custom IPs/Domains</span>
+        </label>
+        <div>
+          <textarea id="bypass-custom-list" class="form-textarea hidden" placeholder="Pisahkan dengan koma atau baris baru...&#10;192.168.0.1,&#10;my-internal-site.com"></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-card">
+    <div class="flex justify-between items-center mb-2">
+      <h3 class="card-title">Proxy List</h3>
+      <div>
+        <span id="proxy-test-status" class="text-sm text-gray-500 mr-2"></span>
+        <button id="clear-proxy-button" class="btn btn-secondary">Clear Proxies</button>
+      </div>
+    </div>
+    <div class="table-scroll-wrapper">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50 sticky top-0">
+          <tr>
+            <th class="table-header text-left">#</th>
+            <th class="table-header text-left">Protocol</th>
+            <th class="table-header text-left">Proxy</th>
+            <th class="table-header text-left">Credential</th>
+            <th class="table-header text-left">Speed (ms)</th>
+            <th class="table-header text-left">Country</th>
+            <th class="table-header text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="proxy-table-body" class="bg-white divide-y divide-gray-200">
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

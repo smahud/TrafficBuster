@@ -1,0 +1,180 @@
+## Berikut **Rangkuman Super Detail & Audit Kesenjangan - TrafficBuster, Status November 2025**
+
+### 1. **Workflow End-to-End: Status Sekarang**
+
+#### **A. Login, Session, & Lisensi (Sesi FE/BE - “Critical Gap”)**
+
+- **Sudah di-backend:** Single-login, session management, GRACE_PERIOD, JWT seluruh flow login/logout.
+- **Gap:** FE belum selalu auto-logout jika session dibersihkan (BE restart) atau 401 unauthorized (pengecualian: validasi hanya pada startup, tidak pada setiap API call/WS disconnect).
+    - *To-Do*: Audit session, auto-logout FE, FE harus kembali ke halaman login (tab profile) jika jadi expired, ditolak, atau disconnect.
+    - *Feature Gating*: Seluruh UI (tab, card, tombol, input) harus mengunci dan/atau overlay granular berdasarkan status lisensi dan features dari backend (tidak hanya overlay total!).
+    - *Contoh yang belum*: InstanceCount >1 di FE harus real-time memunculkan notifikasi/menolak input + overlay kartu, bukan hanya disable tab.
+
+#### **B. Manajemen Data—Dataset Sync (General/Geo/Platform/Settings)**
+- **Sudah:** FE dapat menambah data target (URL), proxy, platform fingerprint, setting; data disimpan di local (appState).
+- **Gap:** Backend expect semua data sudah diunggah, FE BELUM full auto-upload ke BE setiap perubahan.
+    - *To-Do*: Setiap tab (general, geo, platform settings) harus auto-upload dataset ke backend menggunakan flow upload (start/chunk/finish), dan saat “Start” hanya mengirim payload referensi dataset.
+    - *Platform update*: FE belum menghandle download/update data platform fingerprint dari BE (harus ada tombol “Update Data Platform Available” jika BE punya update).
+    - *Proxy bypass & DNS*: Status enable/disable proxy, config bypass, DNS dari FE harus benar-benar sinkron ke BE dan BE bisa menangani semua mode (proxy, host, custom).
+
+#### **C. Setting & Flow Configuration**
+- **Sudah:** FE dapat memilih session duration (constant/variable), platform switching, traffic delay, page traffic, DNS, proxy switching, human surfing (scroll/click simulation), dsb.
+- **Gap:** Backend harus menerjemahkan config ke logika eksekusi Playwright.  
+    - *To-Do*: FE wajib menghapus interval scroll dari settings, BE Playwright engine harus scroll acak sepanjang session. Klik simulation juga harus fleksibel (timing, target link, rasio internal/external) dan PROGRESS harus real-time ke FE.
+
+#### **D. Scheduler/Job Run & Table Flow**
+- **Sudah:** FE dapat menambah job scheduler (tab scheduler) dan mengisi field nama, occurrence, tanggal.
+- **Gap:** Belum penuh sinkronisasi antara FE/BE—FE mesti push config ke backend, BE menyimpan job scheduler sebagai persistent dan BE auto-menyusun job sesuai schedule dan dataset referensi.
+    - *To-Do*: Setiap penjadwalan/submit dari FE harus push ke BE, BE harus mampu receive, store, run cron, dan delete job sesuai permintaan FE.
+
+#### **E. Report & Table Flow/Metrics**
+- **Sudah:** Backend sudah punya websocket “progressUpdate”, “flowDoneUpdate”, dan “clickDoneUpdate”, FE menerima pesan ini dan update tabel di Tab Run.
+- **Gap:** Tampilannya belum sepenuhnya granular; flow status, click status (xxxx/yyyyy | aaa/bbb), metrics Success/Fail/ETA.
+    - *To-Do*: Semua metrik harus auto-render di tab run FE dan metric display ditingkatkan; selain itu Log Export harus difinalisasi.
+
+---
+
+### 2. **Tabel Flow, Table Metric, & Audit Report**
+- **Tabel flow status:** Kolom “Flow Status” di tab general wajib update xxxx/yy (flow done/target) dan aaa/bbb (click done/target) setiap message WebSocket diterima.
+- **Tabel Scheduler:** Tabel scheduler harus render seluruh job, dengan tombol delete tiap baris dan status running/scheduled.
+- **Log Metrik:** Job Info, Success/Fail/ETA, flow in progress, seluruh log yang relevan, dan *auto-save log* saat pekerjaan siap/stop.
+
+---
+
+### 3. **Edge Case & Security**
+- **Proxy Failover**: BE harus bisa melakukan failover proxy auto jika proxy error, mengambil dari pool dan retry—FE harus update status (proxy enable/disable) secara real-time.
+- **SafeMode/Consent**: Backend dan FE harus memastikan jika klik eksternal membutuhkan consent, audit trail harus tersimpan lengkap/persisten.
+- **Session Cleaner**: Backend sudah punya, tetapi FE perlu push session expired ke login prompt.
+
+---
+
+### 4. **Kesenjangan Implementasi per Modul (Yang Harus Dikerjakan Berikutnya)**
+- **FE (Frontend):**
+    - Audit session setiap API call dan auto-logout.
+    - Sinkronisasi granular per card/fitur sesuai feature gating/back-end response.
+    - Sinkronisasi dataset upload dari setiap tab ke backend.
+    - Payload /run/start hanya berupa referensi, bukan data mentah.
+    - Metrics, table log, export log, real-time metrics.
+- **BE (Backend):**
+    - Sinkronisasi dataset management dan validasi lisensi pada finish upload.
+    - Worker pool Playwright yang membaca config/settings referensi dan mengeksekusi sesuai aturan.
+    - Proxy failover dan log audit.
+    - Consent mechanism/storage untuk klik eksternal.
+    - Scheduler persistent, API job manage, cron auto-start.
+
+---
+
+### 5. **Workflows, Flow Diagrams, Arsitektur (Poin Utama)**
+- **User login → dataset setup → upload dataset → job scheduler/set run → submit referensi → BE execution & runner assignment → Playwright run & real-time progress → FE update & metrics/log → export/report**
+- **Session anywhere expired/401 → FE auto-kembali ke tab login.**
+- **Mekanisme granular locking–unlocking tiap card/tab sesuai fitur lisensi dari backend.**
+- **Dataset upload & referensi–bukan “state”/blob—adalah core integrasi FE/BE v10**
+
+---
+
+## 6. **Tabel Workflow, Kunci Proses, dan Rincian Alur Kerja**
+
+### **A. Workflow End-to-End TrafficBuster (Per Modul, Detail Step)**
+
+#### 1. **Autentikasi**
+| Step | FE                      | BE                          | Status           |
+|------|-------------------------|-----------------------------|------------------|
+| 1    | User buka tab Login/Profil | Terima POST login, verifikasi JWT/session | SIAP, sudah jalan (minor gap FE/auto-logout) |
+| 2    | FE ambil features/limit (dari BE) | Kirim `features` matrix ke FE | OK              |
+| 3    | FE auto-revalidate session tiap API/WS | Jika session/grace period habis: push “sessionExpire”/401 | **BELUM FULL (lihat catatan audit session FE)** |
+
+#### 2. **Feature Gating & Lisensi**
+| Fitur/Kartu/Tab    | FE Gating Granular | BE Gating        | Status |
+|--------------------|--------------------|------------------|--------|
+| InstanceCount      | Input settings—max sesuai lisensi, popup notif jika lebih | BE validasi di /run/start | FE BELUM FULL granular, BE SIAP |
+| Human Surfing      | Card di-lock overlay jika lisensi tidak allow | BE reject & error jika illegal | FE overlay sudah, granular gating belum |
+| Import Proxy       | Tombol/field disable jika disallow | BE reject & error jika illegal | FE/BELUM di semua tombol, BE OK |
+| Scheduler/Job      | Tab di-lock/disable jika no permission | BE reject /schedule API jika tidak allow | Belum seluruh FE granular, BE SIAP |
+
+#### 3. **Dataset Management—Upload & Referensi**
+| Modul        | FE Sinkronisasi Data | Payload ke BE           | BE Handling         | Status      |
+|--------------|---------------------|-------------------------|---------------------|-------------|
+| General/Target| Setiap add/import push full ke /data/upload | “referensi set” ke /run/start  | datasetStore per user, validasi lisensi | **BELUM FULL AUTO, FE/BE harus sinkronisasi per tab**
+| Proxy/Geo    | Setiap enable/import push full ke /data/upload | “referensi set” ke /run/start  | datasetStore per user, validasi lisensi | FE & BE OK—perlu finalisasi granular proxy bypass/dns |
+| Platform     | Add/manual/random auto-push ke /data/upload | “referensi set” ke /run/start  | datasetStore per user, validasi lisensi | OK, UI update dari BE belum ada |
+| Settings     | Tiap save profile push ke /data/upload      | “settingsProfile” ke /run/start| datasetStore per user, validasi lisensi | Belum full di FE, BE ready |
+
+#### 4. **Schedule (Flow Automation/Cron)**
+| Langkah    | FE               | BE              | Status |
+|------------|------------------|-----------------|--------|
+| Add/Edit/Delete Schedule | Submit ke /schedule/create, render scheduler table, delete | Store job to file, setup auto-run (cron), delete | FE sudah UI design, BE sudah API, perlu dialirkan |
+
+#### 5. **Run/Progress & Flow Table**
+| Pesan WS | FE Handling           | BE Emit/Kalkulasi      | Sumber |
+|----------|-----------------------|------------------------|--------|
+| progressUpdate | update metrics/ETA/UI | Hitung total/success/fail/ETA | jobManager/flowWorker |
+| flowDoneUpdate | update flow target/xxx | Update database & emit to FE | jobManager/flowWorker |
+| clickDoneUpdate | update click target/aaa | Update database & emit to FE | jobManager/flowWorker |
+| jobInfo | Show info detail run/instance | Emit segera setelah start | jobManager |
+| Log/Audit/Status | update log console / metrics | audit job, log event, error, consent | auditLogger/testLogger |
+
+#### 6. **Edge, Kegagalan/Failover**
+| Skenario  | FE Expectation | BE Handling         | Status  |
+|-----------|----------------|---------------------|---------|
+| Proxy failover | FE tabel enable/disable auto update | BE ambil proxy baru, retry, emit status | FE patch sudah, BE logic perlu finalisasi |
+| Session expired | FE auto-logout + prompt login | BE push sessionExpired event | FE BELUM full |
+| Consent/SafeMode | FE block card/click jika belum ada consent | BE reject job & log if no consent | BE ok, FE UI overlay OK |
+
+---
+
+## 7. **Detail Tabel Flow Status**
+**Tab General:**
+| ID(UUID) | URL | Type | Source | Keyword | Flow Status (xxx/yyyyy) | Click Status (aaa/bbb) |
+|----------|-----|------|--------|---------|------------------------|----------------------|
+| ...      | ... | ...  | ...    | ...     | 5/100                  | 2/20                 |
+
+- **xxx** = flowDone (BE update via WS, FE render)
+- **yyyyy** = flowTarget (kalkulasi FE, dikirim ke BE)
+- **aaa** = clickDone (BE update via WS, FE render)
+- **bbb** = clickTarget (FE calc, dikirim ke BE)
+
+**Tab Run:**
+| Instance | Progress Bar | Job Info | Success | Fail | ETA | Log Console |
+|----------|--------------|----------|---------|------|-----|-------------|
+| ...      | ...          | ...      | ...     | ...  | ... | ...         |
+
+---
+
+## 8. **Integrasi & Layer Kritis**
+- **FE/BE Sinkronisasi State:** Seluruh variable “state” FE (appState general/geo/platform/settings) sekarang harus di-upload dataset, bukan dikirim langsung ke /run/start. Payload ke BE wajib berbentuk “referensi” saja, BE resolve ke data/file per user.
+- **Gating granular:** FE wajib melakukan feature gating bukan hanya di tab, tapi di semua input, card, tombol, dan value. Kalau di setting—input dibatasi (misal instanceCount, humanSurfing), card di-overlay jika lisensi tidak mengizinkan, dan notif/error di input. BE validasi ulang semua field saat job start.
+- **Progress Reporting:** Semua log, job info, progress, click update wajib langsung real-time ke FE dan di-render ke UI metrik/log.
+- **Proxy/Failover:** Proxy table status harus auto-update atas perubahan status dari BE (failover, test, disable, dsb).
+- **Schedule/Job Table:** Job scheduler dapat add, edit, delete, seluruh status job, log, result bisa diekspor.
+
+---
+
+## 9. **List High-Impact Task Belum Terealisasi (Hasil Crosscheck)**
+Berikut *list* tugas yang menurut analisa audit, roadmap, patch, dan change-log harus segera diimplementasikan agar integrasi kerja end-to-end lancar:
+
+**A. FE Major/Granular**
+- Feature gating granular instanceCount & seluruh card/tombol.
+- Auto-dataset upload setiap perubahan—bukan pada “start run” saja, termasuk delete/update/set name.
+- Sinkronisasi settingsProfile & update ke BE.
+- Auto-logout session expired setiap API call/WS event/diskoneksi.
+
+**B. BE (Backend) Untuk End-to-End**
+- Sinkronisasi validation & storage dataset (validasi lisensi di /upload/finish).
+- Worker pool Playwright yang responsif config dari referensi settings.
+- Consent check & log, proxy failover log, audit event.
+- Scheduler persistence & cron.
+- File import modular (txt/csv/docx/xlsx).
+
+**C. Reporting/Table Metric**
+- Metrik update granular di FE (tab-run dan tab-general) dari pesan progress / WS (success, fail, ETA).
+- Export log/report job setelah run.
+
+---
+
+## 10. **Kesimpulan Audit GAP**
+- Semua gap diatas adalah hasil audit lintas roadmap, source, patch, dan diskusi.  
+- Tidak ada item yang Anda anulir atau sudah dideclare diskip.
+- Task minor (UI/overlay, notif, granular validator) tetap diurutkan setelah task structure utama di backend/FE.
+
+---
+

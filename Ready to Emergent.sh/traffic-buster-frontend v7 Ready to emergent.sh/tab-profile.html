@@ -1,0 +1,82 @@
+<div class="content-wrapper">
+  <h2 class="content-title">Profile & Autentikasi</h2>
+
+  <div id="profile-loggedin-view" class="hidden">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+      <div class="content-card">
+        <h3 class="card-title">Informasi User</h3>
+        <div class="flex items-center space-x-4 mb-4">
+          
+          <div class="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+            <svg class="w-12 h-12 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+              <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+            </svg>
+          </div>
+          
+          <div>
+            <span id="profile-username" class="text-lg font-medium text-gray-900">...</span>
+            <span id="profile-email" class="text-sm text-gray-500 block">...</span>
+          </div>
+        </div>
+        <div>
+          <label class="form-label">Status</label>
+          <span id="profile-status" class="font-semibold">...</span>
+        </div>
+        <div>
+          <label class="form-label mt-2">Status Lisensi</label>
+          <span id="profile-license" class="text-lg font-bold text-green-600">...</span>
+        </div>
+        <button id="profile-logout-button" class="btn btn-danger w-full mt-4">Logout</button>
+      </div>
+
+      <div class="content-card">
+        <h3 class="card-title">Ubah Password (Dummy)</h3>
+        <div class="space-y-2">
+          <div>
+            <label for="profile-pass-old" class="form-label">Password Lama</label>
+            <input type="password" id="profile-pass-old" class="form-input">
+          </div>
+          <div>
+            <label for="profile-pass-new" class="form-label">Password Baru</label>
+            <input type="password" id="profile-pass-new" class="form-input">
+          </div>
+          <div>
+            <label for="profile-pass-confirm" class="form-label">Konfirmasi Password Baru</label>
+            <input type="password" id="profile-pass-confirm" class="form-input">
+          </div>
+          <button id="profile-change-pass-button" class="btn btn-primary w-full mt-2">Ubah Password</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="profile-login-view">
+    <div class="content-card max-w-md mx-auto">
+      <h3 class="card-title">Login</h3>
+      <p class="text-sm text-gray-600 mb-4">Anda harus login untuk menggunakan aplikasi.</p>
+      <div class="space-y-2">
+        <div>
+          <label for="login-username" class="form-label">Username</label>
+          <input type="text" id="login-username" class="form-input" placeholder="Masukkan username Anda">
+        </div>
+        <div>
+          <label for="login-password" class="form-label">Password</label>
+          <input type="password" id="login-password" class="form-input" placeholder="Masukkan password Anda">
+        </div>
+
+        <div id="login-host-div" class="hidden pt-2">
+          <label for="login-host" class="form-label">Backend Host</label>
+          <input type="text" id="login-host" class="form-input" placeholder="my-server.com:5151">
+          <p class="text-xs text-gray-500 mt-1">Wajib diisi untuk mode Produksi.</p>
+        </div>
+
+        <div class="pt-2">
+          <button id="login-button" class="btn btn-primary w-full">Login</button>
+        </div>
+        <p id="login-error-msg" class="text-xs text-red-600 h-4"></p>
+        
+      </div>
+    </div>
+  </div>
+
+</div>

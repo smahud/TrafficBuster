@@ -1,0 +1,8 @@
+{
+  "username": "enterprise",
+  "email": "enterprise@example.com",
+  "license": "Enterprise",
+  "passwordHash": "$2b$10$Gjcc23PkMN7rNq7XohXa/uXnGDMeGduHVZmvhyz/DEGvN302CLybS",
+  "sessions": [],
+  "config": {}
+}

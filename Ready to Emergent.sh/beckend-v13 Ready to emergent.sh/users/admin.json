@@ -1,0 +1,12 @@
+{
+  "username": "admin",
+  "email": "admin@example.com",
+  "license": "Enterprise",
+  "passwordHash": "$2b$10$EeeOeHlFcweimZKh5WoDUuoJZ.Kymphsd6Wr0or1gec4FseDnNPzS",
+  "sessions": [],
+  "config": {},
+  "role": "admin",
+  "licenseConfig": {
+    "maxInstances": 20
+  }
+}

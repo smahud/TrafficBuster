@@ -1,0 +1,54 @@
+{
+  "instanceCount": 10,
+  "humanSurfing": true,
+  "loadedData": {
+    "targets": [
+      {
+        "id": "t_1",
+        "url": "t1.com",
+        "flowTarget": 0,
+        "clickTarget": 0
+      },
+      {
+        "id": "t_2",
+        "url": "t2.com",
+        "flowTarget": 0,
+        "clickTarget": 0
+      },
+      {
+        "id": "t_3",
+        "url": "t3.com",
+        "flowTarget": 0,
+        "clickTarget": 0
+      }
+    ],
+    "proxies": [
+      {
+        "id": "p_1",
+        "host": "1.1.1.1",
+        "port": 80,
+        "user": null,
+        "pass": null,
+        "enabled": true
+      },
+      {
+        "id": "p_2",
+        "host": "2.2.2.2",
+        "port": 8080,
+        "user": null,
+        "pass": null,
+        "enabled": true
+      }
+    ],
+    "platforms": [
+      {
+        "id": "pf_1",
+        "os": "Windows",
+        "osVersion": "Unknown",
+        "browser": "Chrome",
+        "browserVersion": "Unknown",
+        "resolution": "Unknown"
+      }
+    ]
+  }
+}

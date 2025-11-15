@@ -1,0 +1,173 @@
+<div class="content-wrapper">
+  <h2 class="content-title">Settings</h2>
+
+  <div class="grid grid-cols-3 gap-2 mb-2">
+    <div class="content-card col-span-2">
+      <h3 class="card-title">Traffic modes</h3>
+      <div class="flex flex-wrap gap-x-4 gap-y-1">
+        <label class="form-radio-label"><input type="radio" id="tm-default" name="traffic-mode" value="Default" class="form-radio" checked><span>Default</span></label>
+        <label class="form-radio-label"><input type="radio" id="tm-max-sessions" name="traffic-mode" value="Max sessions" class="form-radio"><span>Max sessions</span></label>
+        <label class="form-radio-label"><input type="radio" id="tm-max-pageviews" name="traffic-mode" value="Max pageviews" class="form-radio"><span>Max pageviews</span></label>
+        <label class="form-radio-label"><input type="radio" id="tm-max-bounce" name="traffic-mode" value="Max bounce rate" class="form-radio"><span>Max bounce rate</span></label>
+        <label class="form-radio-label"><input type="radio" id="tm-min-bounce" name="traffic-mode" value="Min bounce rate" class="form-radio"><span>Min bounce rate</span></label>
+      </div>
+    </div>
+    <div class="content-card">
+      <h3 class="card-title">Instance Count</h3>
+      <label for="instance-count" class="form-label">Simultaneous flows</label>
+      <input type="number" id="instance-count" class="form-input w-auto" value="1" min="1">
+    </div>
+  </div>
+  
+  <div class="grid grid-cols-1 lg:grid-cols-4 gap-2 lg:items-start">
+    
+    <div class="space-y-2">
+      <div class="content-card h-auto">
+        <h3 class="card-title">Session duration</h3>
+        <label class="form-radio-label"><input type="radio" id="session-duration-constant" name="session-duration" class="form-radio" value="Constant" checked><span>Constant (ms)</span></label>
+        <div id="session-duration-constant-div">
+          <input type="number" id="session-duration-constant-value" class="form-input ml-5 w-auto" value="2000">
+        </div>
+        
+        <label class="form-radio-label mt-2"><input type="radio" id="session-duration-variable" name="session-duration" class="form-radio" value="Variable"><span>Variable (random) time duration</span></label>
+        <div id="session-duration-variable-div" class="flex gap-2 ml-5 hidden">
+          <input type="number" id="session-duration-variable-min" class="form-input" placeholder="Min" value="4000">
+          <input type="number" id="session-duration-variable-max" class="form-input" placeholder="Max" value="4000">
+        </div>
+      </div>
+      
+      <div class="content-card h-auto">
+        <h3 class="card-title">Platform switching</h3>
+        <label class="form-radio-label"><input type="radio" id="platform-switch-single" name="platform-switch" value="Single" class="form-radio" checked><span>Single platform</span></label>
+        <label class="form-radio-label mt-1"><input type="radio" id="platform-switch-random" name="platform-switch" value="Random" class="form-radio"><span>Switch randomly</span></label>
+      </div>
+      
+      <div class="content-card h-auto">
+        <h3 class="card-title">Traffic Delay</h3>
+        <label class="form-radio-label"><input type="radio" id="traffic-delay-constant" name="traffic-delay" value="Constant" class="form-radio" checked><span>Constant (ms)</span></label>
+        <div id="traffic-delay-constant-div">
+          <input type="number" id="traffic-delay-constant-value" class="form-input ml-5 w-auto" value="1000">
+        </div>
+        
+        <label class="form-radio-label mt-2"><input type="radio" id="traffic-delay-variable" name="traffic-delay" value="Variable" class="form-radio"><span>Variable (random) time duration</span></label>
+        <div id="traffic-delay-variable-div" class="flex gap-2 ml-5 hidden">
+          <input type="number" id="traffic-delay-variable-min" class="form-input" placeholder="Min" value="1000">
+          <input type="number" id="traffic-delay-variable-max" class="form-input" placeholder="Max" value="3000">
+        </div>
+      </div>
+    </div>
+    
+    <div class="space-y-2">
+      <div class="content-card h-auto">
+        <h3 class="card-title">Page traffic</h3>
+        <label class="form-radio-label"><input type="radio" id="page-traffic-total" name="page-traffic" value="Total" class="form-radio" checked><span>Total traffic</span></label>
+        <input type="number" id="page-traffic-total-value" class="form-input ml-5 w-auto" value="10">
+        
+        <label class="form-radio-label mt-2"><input type="radio" id="page-traffic-avg" name="page-traffic" value="Avg" class="form-radio"><span>Avg traffic per page</span></label>
+        <div id="page-traffic-avg-options" class="flex gap-2 ml-5 hidden">
+          <input type="number" id="page-traffic-avg-min" class="form-input" placeholder="Min" value="1">
+          <input type="number" id="page-traffic-avg-max" class="form-input" placeholder="Max" value="5">
+        </div>
+      </div>
+      
+      <div class="content-card h-auto">
+        <h3 class="card-title">DNS Configuration</h3>
+        <div class="space-y-1">
+          <label class="form-radio-label">
+            <input type="radio" id="dns-proxy" name="dns-config" value="Proxy" class="form-radio" checked>
+            <span>Use Proxy DNS</span>
+          </label>
+          <label class="form-radio-label">
+            <input type="radio" id="dns-host" name="dns-config" value="Host" class="form-radio">
+            <span>Use Host PC DNS</span>
+          </label>
+          <label class="form-radio-label">
+            <input type="radio" id="dns-custom" name="dns-config" value="Custom" class="form-radio">
+            <span>Custom DNS</span>
+          </label>
+          <input type="text" id="dns-custom-input" class="form-input ml-5 hidden" placeholder="8.8.8.8; 1.1.1.1">
+        </div>
+      </div>
+
+      <div class="content-card h-auto">
+        <h3 class="card-title">Page selection order</h3>
+        <label class="form-radio-label"><input type="radio" id="page-order-each" name="page-order" value="Sequential" class="form-radio" checked><span>Each page in order</span></label>
+        <label class="form-radio-label mt-1"><input type="radio" id="page-order-random" name="page-order" value="Random" class="form-radio"><span>Randomly select each time</span></label>
+      </div>
+    </div>
+
+    <div class="space-y-2">
+      <div class="content-card h-auto">
+        <h3 class="card-title">Proxy switching</h3>
+        <label class="form-radio-label"><input type="radio" id="proxy-switch-single" name="proxy-switch" value="Single" class="form-radio" checked><span>Single page</span></label>
+        <label class="form-radio-label mt-1"><input type="radio" id="proxy-switch-all" name="proxy-switch" value="All" class="form-radio"><span>Once all page visited</span></label>
+        
+        <label class="form-radio-label mt-1"><input type="radio" id="proxy-switch-time" name="proxy-switch" value="Time" class="form-radio"><span>Time based (ms)</span></label>
+        <input type="number" id="proxy-switch-time-value" class="form-input ml-5 w-auto hidden" value="300000">
+        
+        <label class="form-checkbox-label mt-1"><input type="checkbox" id="proxy-switch-random" class="form-checkbox"><span>Use random proxy</span></label>
+      </div>
+      
+      </div>
+
+    <div class="content-card h-auto">
+      <h3 class="card-title">Human Surfing Simulation</h3>
+      
+      <div class="grid grid-cols-1 md:grid-cols-1 gap-2">
+        
+        <div class="space-y-2">
+          <label class="form-checkbox-label">
+            <input type="checkbox" id="human-auto-scroll" class="form-checkbox">
+            <span>Auto Page Scrolling</span>
+          </label>
+          <div id="human-auto-scroll-options" class="ml-5 space-y-2 hidden">
+            <label class="form-label text-xs">Surfing Time:</label>
+            <label class="form-radio-label">
+              <input type="radio" name="surfing-time-type" value="Constant" class="form-radio" checked>
+              <span>Constant (ms)</span>
+            </label>
+            <input type="number" id="human-surfing-time-constant" class="form-input ml-5 w-auto" value="1500">
+            
+            <label class="form-radio-label mt-2">
+              <input type="radio" name="surfing-time-type" value="Variable" class="form-radio">
+              <span>Variable (ms)</span>
+            </label>
+            <div id="human-surfing-time-variable" class="flex gap-2 ml-5 hidden">
+              <input type="number" id="human-surfing-time-min" class="form-input" placeholder="Min" value="1000">
+              <input type="number" id="human-surfing-time-max" class="form-input" placeholder="Max" value="3000">
+            </div>
+          </div>
+          
+          <label class="form-checkbox-label mt-2">
+            <input type="checkbox" id="human-auto-click" class="form-checkbox">
+            <span>Auto Click Ratio</span>
+          </label>
+          <div id="human-auto-click-options" class="ml-5 space-y-2 hidden">
+            <label class="form-checkbox-label">
+              <input type="checkbox" id="human-internal-click" class="form-checkbox">
+              <span>Internal Link (%)</span>
+            </label>
+            <div id="human-internal-click-options" class="ml-5 space-y-2 hidden">
+              <input type="number" id="human-internal-click-value" class="form-input w-auto" value="10">
+            </div>
+            <label class="form-checkbox-label mt-2">
+              <input type="checkbox" id="human-external-click" class="form-checkbox">
+              <span>External Link (%)</span>
+            </label>
+            <div id="human-external-click-options" class="ml-5 space-y-2 hidden">
+              <input type="number" id="human-external-click-value" class="form-input w-auto" value="1">
+            </div>
+          </div>
+
+          <div id="human-interaction-depth-div" class="space-y-2 mt-2 pt-2 border-t hidden">
+            <div>
+              <label for="human-interaction-depth" class="form-label">Max Deep Interaction Per Flow</label>
+              <input type="number" id="human-interaction-depth" class="form-input w-auto" value="3">
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div> </div>

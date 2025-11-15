@@ -1,0 +1,25 @@
+{
+  "name": "trafficbuster-backend",
+  "version": "1.0.0",
+  "description": "TrafficBuster backend (Phase0+1)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "type": "commonjs",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "express-rate-limit": "^6.8.0",
+    "helmet": "^6.0.1",
+    "https-proxy-agent": "^7.0.5",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
+    "node-cron": "^3.0.3",
+    "playwright": "^1.45.3",
+    "socks-proxy-agent": "^8.0.4",
+    "ws": "^8.18.3"
+  }
+}

@@ -1,0 +1,233 @@
+<!-- FRONTEND - tab-scheduler.html (DYNAMIC RESPONSIVE) -->
+<!-- Credit: smahud - 2025-11-14 21:42:30 UTC -->
+
+<div class="content-wrapper">
+  <h2 class="content-title">Task Scheduler</h2>
+
+  <div class="scheduler-grid">
+    
+    <!-- LEFT COLUMN (1/3 width) -->
+    <div class="scheduler-left">
+      
+      <!-- KIRI ATAS: Buat Jadwal Baru -->
+      <div class="content-card">
+        <h3 class="card-title">Buat Jadwal Baru</h3>
+        
+        <form id="scheduler-form">
+          <div>
+            <label for="schedule-name" class="form-label">Nama Jadwal</label>
+            <input 
+              type="text" 
+              id="schedule-name" 
+              class="form-input" 
+              placeholder="Misal: Run Harian"
+              required
+            />
+          </div>
+          
+          <div class="mt-2">
+            <label for="schedule-occurrence" class="form-label">Ulangi (Occurrence)</label>
+            <select id="schedule-occurrence" class="form-select" required>
+              <option value="Once">Once (Sekali Jalan)</option>
+              <option value="Every 6hrs">Every 6hrs</option>
+              <option value="Every 12hrs">Every 12hrs</option>
+              <option value="Daily">Daily (Harian)</option>
+              <option value="Alternative days">Alternative days (2 Hari sekali)</option>
+              <option value="Weekly">Weekly (Mingguan)</option>
+            </select>
+          </div>
+          
+          <div class="mt-2">
+            <label for="schedule-start-at" class="form-label">Mulai Pada (Start at)</label>
+            <input 
+              type="datetime-local" 
+              id="schedule-start-at" 
+              class="form-input"
+              required
+            />
+          </div>
+          
+          <button type="submit" class="btn btn-primary w-full mt-4">Add Schedule</button>
+        </form>
+      </div>
+
+      <!-- KIRI BAWAH: Empty Card (auto-grows to fill remaining space) -->
+      <div class="content-card scheduler-empty-card"></div>
+
+    </div>
+
+    <!-- RIGHT COLUMN (2/3 width) - DYNAMIC HEIGHT -->
+    <div class="scheduler-right">
+      
+      <!-- KANAN ATAS: Daftar Jadwal (50% of available height) -->
+      <div class="content-card scheduler-card-top">
+        <div class="flex justify-between items-center mb-2">
+          <h3 class="card-title">Daftar Jadwal</h3>
+          <button id="clear-schedule-button" class="btn btn-secondary">Clear All</button>
+        </div>
+        
+        <div class="table-scroll-wrapper">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50 sticky top-0">
+              <tr>
+                <th class="table-header text-left">#</th>
+                <th class="table-header text-left">Nama</th>
+                <th class="table-header text-left">Occurrence</th>
+                <th class="table-header text-left">Start Time</th>
+                <th class="table-header text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="schedule-table-body" class="bg-white divide-y divide-gray-200">
+              <!-- Will be populated by JS -->
+            </tbody>
+          </table>
+
+          <div id="schedule-list-empty" class="text-center py-8 text-gray-500" style="display: none;">
+            Belum ada jadwal. Buat jadwal baru di sebelah kiri.
+          </div>
+        </div>
+      </div>
+
+      <!-- KANAN BAWAH: History Pekerjaan (50% of available height) -->
+      <div class="content-card scheduler-card-bottom">
+        <div class="flex justify-between items-center mb-2">
+          <h3 class="card-title">History Pekerjaan</h3>
+          <button id="history-clear-btn" class="btn btn-secondary text-sm">Clear History</button>
+        </div>
+        
+        <div class="table-scroll-wrapper">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50 sticky top-0">
+              <tr>
+                <th class="table-header text-left">Start Time</th>
+                <th class="table-header text-left">Duration</th>
+                <th class="table-header text-left">Status</th>
+                <th class="table-header text-left">Flow</th>
+                <th class="table-header text-left">Impressions</th>
+                <th class="table-header text-left">Clicks</th>
+                <th class="table-header text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="history-list-tbody" class="bg-white divide-y divide-gray-200">
+              <!-- Will be populated by JS -->
+            </tbody>
+          </table>
+
+          <div id="history-list-empty" class="text-center py-8 text-gray-500" style="display: none;">
+            Belum ada history. Jalankan job untuk melihat history.
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<style>
+  /* DYNAMIC RESPONSIVE LAYOUT */
+  .scheduler-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr; /* 1/3 and 2/3 width */
+    gap: 0.5rem;
+    height: calc(100vh - 180px); /* Dynamic: Full viewport minus header/padding */
+    min-height: 600px; /* Minimum height for small screens */
+  }
+
+  .scheduler-left {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    height: 100%;
+  }
+
+  .scheduler-empty-card {
+    flex: 1; /* Grows to fill remaining space */
+    min-height: 100px;
+  }
+
+  .scheduler-right {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    height: 100%;
+  }
+
+  .scheduler-card-top,
+  .scheduler-card-bottom {
+    flex: 1; /* Each card takes 50% of available height */
+    display: flex;
+    flex-direction: column;
+    min-height: 250px; /* Minimum height per card */
+  }
+
+  /* Scrollable table area */
+  .scheduler-card-top .table-scroll-wrapper,
+  .scheduler-card-bottom .table-scroll-wrapper {
+    flex: 1; /* Grows to fill card */
+    overflow-y: auto;
+    overflow-x: auto;
+  }
+
+  /* Status badges */
+  .status-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  
+  .status-running {
+    background-color: #dbeafe;
+    color: #1e40af;
+  }
+  
+  .status-stopped {
+    background-color: #fef3c7;
+    color: #92400e;
+  }
+  
+  .status-completed {
+    background-color: #d1fae5;
+    color: #065f46;
+  }
+  
+  .status-failed {
+    background-color: #fee2e2;
+    color: #991b1b;
+  }
+  
+  /* Scrollbar styling */
+  .table-scroll-wrapper::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  .table-scroll-wrapper::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+  }
+  
+  .table-scroll-wrapper::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+  }
+  
+  .table-scroll-wrapper::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+
+  /* Responsive: Mobile/Tablet (optional) */
+  @media (max-width: 768px) {
+    .scheduler-grid {
+      grid-template-columns: 1fr; /* Stack vertically on small screens */
+      height: auto;
+    }
+    
+    .scheduler-card-top,
+    .scheduler-card-bottom {
+      min-height: 300px;
+    }
+  }
+</style>
